@@ -9,7 +9,7 @@ import react from '@vitejs/plugin-react'
  */
 function devCsp(): Plugin {
   return {
-    name: 'anyremote-dev-csp',
+    name: 'deskmux-dev-csp',
     apply: 'serve',
     transformIndexHtml(html) {
       return html.replace("script-src 'self';", "script-src 'self' 'unsafe-inline';")

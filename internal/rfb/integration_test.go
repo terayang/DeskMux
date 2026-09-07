@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"anyremote/internal/rfb"
+	"deskmux/internal/rfb"
 )
 
 func screenSharingReachable() bool {
@@ -68,7 +68,7 @@ func TestIntegrationScreenSharing(t *testing.T) {
 	t.Run("wrong credentials yield a clean RFB auth failure", func(t *testing.T) {
 		conn := dial5900(t)
 		_, err := rfb.PerformHandshake(conn, rfb.HandshakeOptions{
-			Username: "anyremote-probe",
+			Username: "deskmux-probe",
 			Password: "definitely-wrong-password",
 			// Screen Sharing stalls while verifying credentials (~1s, more
 			// when another handshake is still being released).

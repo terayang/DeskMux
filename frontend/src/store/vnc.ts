@@ -3,7 +3,7 @@
  * lifecycle for the desktop panel and exposes its status as a zustand store.
  *
  * Connection path: attachVnc() asks the main process for a VNC bridge
- * (window.anyremote.vnc.startBridge — the bridge terminates the RFB security
+ * (window.deskmux.vnc.startBridge — the bridge terminates the RFB security
  * handshake, including Apple DH, so the renderer sees an auth-free loopback
  * endpoint), then points a noVNC RFB client at the bridge's WebSocket.
  *
@@ -29,7 +29,7 @@ import { VNC_BRIDGE_CLOSE_CODES } from '../../shared/vnc'
 
 /**
  * @novnc/novnc ships no TypeScript declarations, so the constructor is
- * imported untyped and bound to the small surface AnyRemote uses. Note: the
+ * imported untyped and bound to the small surface DeskMux uses. Note: the
  * package's exports map exposes only the root entry ('@novnc/novnc' ->
  * core/rfb.js); the legacy '@novnc/novnc/lib/rfb.js' subpath no longer
  * exists in 1.7.x.
@@ -160,7 +160,7 @@ function teardown(session: LiveSession, opts: { disconnectRfb: boolean }): void 
   if (session.bridgeId !== null) {
     const bridgeId = session.bridgeId
     session.bridgeId = null
-    void window.anyremote.vnc.stopBridge(bridgeId).catch(() => {
+    void window.deskmux.vnc.stopBridge(bridgeId).catch(() => {
       // Bridge already gone (e.g. app quitting); nothing to do.
     })
   }
@@ -321,7 +321,7 @@ export async function attachVnc(
   let handle: VncBridgeHandle
   try {
     const encodings = ENC_MODE_TO_ENCODINGS[store.getState().encMode]
-    handle = await window.anyremote.vnc.startBridge({ ...params, encodings })
+    handle = await window.deskmux.vnc.startBridge({ ...params, encodings })
   } catch (err) {
     if (ownsSlot()) {
       store.setState({ status: 'error', errorKind: classifyIpcError(err) })
@@ -331,7 +331,7 @@ export async function attachVnc(
   }
   if (!ownsSlot()) {
     // Unmounted while the bridge was starting: release it immediately.
-    void window.anyremote.vnc.stopBridge(handle.bridgeId).catch(() => {})
+    void window.deskmux.vnc.stopBridge(handle.bridgeId).catch(() => {})
     return
   }
   session.bridgeId = handle.bridgeId

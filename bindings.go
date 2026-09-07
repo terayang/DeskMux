@@ -25,11 +25,11 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"anyremote/internal/rfb"
-	"anyremote/internal/scanner"
-	"anyremote/internal/sshx"
-	"anyremote/internal/store"
-	"anyremote/internal/vncbridge"
+	"deskmux/internal/rfb"
+	"deskmux/internal/scanner"
+	"deskmux/internal/sshx"
+	"deskmux/internal/store"
+	"deskmux/internal/vncbridge"
 )
 
 // Streaming event channel names, mirroring frontend/shared/ipc.ts.

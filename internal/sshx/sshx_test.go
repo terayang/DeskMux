@@ -296,11 +296,11 @@ func TestShellEchoRoundtrip(t *testing.T) {
 	if err := m.OpenShell(id, 80, 24, collector.onData, collector.onClose); err != nil {
 		t.Fatalf("OpenShell: %v", err)
 	}
-	if err := m.WriteToShell(id, "hello-anyremote"); err != nil {
+	if err := m.WriteToShell(id, "hello-deskmux"); err != nil {
 		t.Fatalf("WriteToShell: %v", err)
 	}
 	waitFor(t, "echo of written data", func() bool {
-		return strings.Contains(collector.String(), "hello-anyremote")
+		return strings.Contains(collector.String(), "hello-deskmux")
 	})
 	if collector.isClosed() {
 		t.Fatal("shell closed unexpectedly")

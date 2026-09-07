@@ -78,7 +78,7 @@ export default function NewConnectionModal({ open, onClose }: NewConnectionModal
   const connectSaved = (id: string): void => {
     void (async () => {
       try {
-        const conn = await window.anyremote.connections.get(id)
+        const conn = await window.deskmux.connections.get(id)
         if (!conn) {
           await refreshSaved() // stale entry (deleted elsewhere): reload the list
           return

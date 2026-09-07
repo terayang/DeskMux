@@ -1,10 +1,10 @@
-# AnyRemote 架构与技术决策
+# DeskMux 架构与技术决策
 
 > 状态：v2 待用户确认（2026-07-26）。本文档记录技术选型及理由，确认后作为开发依据。
 
 ## 0. 2026-07 Wails 迁移
 
-2026-07-28 起项目已从 Electron 迁移到 **Wails v2**（Go 后端 + 系统 WebView）：Go 单进程承载原 Electron 主进程的全部协议层（`internal/scanner` / `sshx` / `rfb` / `vncbridge` / `store`），React 前端经 `frontend/src/bridge/` 的 `window.anyremote` 适配层零改动复用；密钥从 safeStorage 落盘改为系统钥匙串（go-keyring）。实测 mac 安装包 133 MB → 11 MB、首窗启动中位 340 ms → 241 ms。迁移报告（含架构对比、实测数据、已知限制）见 [MIGRATION.md](MIGRATION.md)。下文 §1–§9 为 Electron 时代的原始选型记录，保留作历史参考；凡与现状冲突处（运行时、包结构、测试与打包方式）以 MIGRATION.md 与现状为准。
+2026-07-28 起项目已从 Electron 迁移到 **Wails v2**（Go 后端 + 系统 WebView）：Go 单进程承载原 Electron 主进程的全部协议层（`internal/scanner` / `sshx` / `rfb` / `vncbridge` / `store`），React 前端经 `frontend/src/bridge/` 的 `window.deskmux` 适配层零改动复用；密钥从 safeStorage 落盘改为系统钥匙串（go-keyring）。实测 mac 安装包 133 MB → 11 MB、首窗启动中位 340 ms → 241 ms。迁移报告（含架构对比、实测数据、已知限制）见 [MIGRATION.md](MIGRATION.md)。下文 §1–§9 为 Electron 时代的原始选型记录，保留作历史参考；凡与现状冲突处（运行时、包结构、测试与打包方式）以 MIGRATION.md 与现状为准。
 
 ## 1. 总体形态：Electron 桌面客户端
 
@@ -58,7 +58,7 @@
 ## 4. 模块结构
 
 ```
-anyremote/
+deskmux/
 ├─ package.json / tsconfig.json / electron.vite.config.ts
 ├─ src/
 │  ├─ main/                  # Electron 主进程

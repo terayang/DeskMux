@@ -1,8 +1,15 @@
 # Changelog
 
-本文件记录 AnyRemote 各版本的显著变更，遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 简式与[语义化版本](https://semver.org/lang/zh-CN/)。
+本文件记录 DeskMux 各版本的显著变更，遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 简式与[语义化版本](https://semver.org/lang/zh-CN/)。
 
-各版本完整的自动生成 release notes 见 [GitHub Releases](https://github.com/terayang/AnyRemote/releases)。
+各版本完整的自动生成 release notes 见 [GitHub Releases](https://github.com/terayang/DeskMux/releases)。
+
+## [0.2.2] - 2026-09-07
+
+### Changed
+
+- 产品更名 AnyRemote → DeskMux：仓库、安装产物、窗口标题、界面文案、Go module 与前端桥接命名空间（`window.deskmux`）全部同步；配置目录、钥匙串 service 名与本地加密文件 KDF 盐保留旧标识以保用户数据连续性（已存连接与凭据无感）
+- 界面语言偏好存储键随桥接改名更换，语言选择一次性回落默认中文
 
 ## [0.2.1] - 2026-09-07
 

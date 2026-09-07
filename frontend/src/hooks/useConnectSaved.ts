@@ -22,7 +22,7 @@ export function useConnectSaved(): (id: string, protocols?: string[]) => Promise
 
   return async (id, protocols) => {
     try {
-      const conn = await window.anyremote.connections.get(id)
+      const conn = await window.deskmux.connections.get(id)
       if (!conn) {
         await refreshSaved()
         return

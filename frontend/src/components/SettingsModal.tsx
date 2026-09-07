@@ -32,7 +32,7 @@ export default function SettingsModal({ open, onClose }: SettingsModalProps) {
   useEffect(() => {
     if (!open) return
     setLoading(true)
-    window.anyremote.settings
+    window.deskmux.settings
       .getSecretStorage()
       .then(setMode)
       .catch(() => undefined) // keep the keychain default when the read fails
@@ -44,7 +44,7 @@ export default function SettingsModal({ open, onClose }: SettingsModalProps) {
     setMode(next)
     setMigrating(true)
     try {
-      await window.anyremote.settings.setSecretStorage(next)
+      await window.deskmux.settings.setSecretStorage(next)
       message.success(t('settings.secretStorage.migrated'))
     } catch (err) {
       // The backend kept the previous mode; revert the selection and show

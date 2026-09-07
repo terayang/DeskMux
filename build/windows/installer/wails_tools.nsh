@@ -5,16 +5,16 @@
 !include "FileFunc.nsh"
 
 !ifndef INFO_PROJECTNAME
-    !define INFO_PROJECTNAME "AnyRemote"
+    !define INFO_PROJECTNAME "DeskMux"
 !endif
 !ifndef INFO_COMPANYNAME
     !define INFO_COMPANYNAME "Silica Yang"
 !endif
 !ifndef INFO_PRODUCTNAME
-    !define INFO_PRODUCTNAME "AnyRemote"
+    !define INFO_PRODUCTNAME "DeskMux"
 !endif
 !ifndef INFO_PRODUCTVERSION
-    !define INFO_PRODUCTVERSION "0.2.1"
+    !define INFO_PRODUCTVERSION "0.2.2"
 !endif
 !ifndef INFO_COPYRIGHT
     !define INFO_COPYRIGHT "Copyright © 2026 Silica Yang"

@@ -27,8 +27,8 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"anyremote/internal/rfb"
-	"anyremote/internal/vncbridge"
+	"deskmux/internal/rfb"
+	"deskmux/internal/vncbridge"
 )
 
 // ---------------------------------------------------------------------------

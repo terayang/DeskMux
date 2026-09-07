@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Build a distributable dmg from a built .app bundle.
 #
-# Usage:   bash scripts/build-dmg.sh [path/to/AnyRemote.app] [arch]
-# Input:   .app path (default: build/bin/AnyRemote.app, produced by `wails build`)
+# Usage:   bash scripts/build-dmg.sh [path/to/DeskMux.app] [arch]
+# Input:   .app path (default: build/bin/DeskMux.app, produced by `wails build`)
 #          arch label for the filename (default: universal)
-# Output:  dist/AnyRemote-<version>-mac-<arch>.dmg
+# Output:  dist/DeskMux-<version>-mac-<arch>.dmg
 #          (<version> is read from the root package.json)
 #
 # The dmg contains the .app plus an /Applications symlink for drag-install.
@@ -13,7 +13,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-APP_PATH="${1:-build/bin/AnyRemote.app}"
+APP_PATH="${1:-build/bin/DeskMux.app}"
 ARCH="${2:-universal}"
 if [ ! -d "$APP_PATH" ]; then
   echo "error: app bundle not found: $APP_PATH" >&2

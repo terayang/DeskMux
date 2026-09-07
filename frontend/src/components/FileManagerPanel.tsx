@@ -221,7 +221,7 @@ export default function FileManagerPanel() {
       const req = ++localReqRef.current
       filesStore.getState().setLocalLoading(true)
       try {
-        const entries = await window.anyremote.localFs.list(path)
+        const entries = await window.deskmux.localFs.list(path)
         if (req === localReqRef.current) {
           filesStore.getState().setLocal(path, sortEntries(entries))
         }
@@ -241,7 +241,7 @@ export default function FileManagerPanel() {
       const req = ++remoteReqRef.current
       filesStore.getState().setRemoteLoading(true)
       try {
-        const entries = await window.anyremote.sftp.list(sid, path)
+        const entries = await window.deskmux.sftp.list(sid, path)
         if (req === remoteReqRef.current) {
           filesStore.getState().setRemote(path, sortEntries(entries))
         }
@@ -268,21 +268,21 @@ export default function FileManagerPanel() {
     filesStore.getState().reset()
 
     const { username, password, privateKey, passphrase } = context.credentials
-    window.anyremote.ssh
+    window.deskmux.ssh
       .connect({ host: context.target, port: 22, username, password, privateKey, passphrase })
       .then(async (sid) => {
         if (cancelled) {
-          void window.anyremote.ssh.close(sid)
+          void window.deskmux.ssh.close(sid)
           return
         }
         sessionIdRef.current = sid
-        unsubProgress = window.anyremote.sftp.onProgress(sid, (progress) => {
+        unsubProgress = window.deskmux.sftp.onProgress(sid, (progress) => {
           const id = activeTransferRef.current
           if (id !== null) filesStore.getState().setTransferProgress(id, progress.percent)
         })
         const [localHome, remoteHome] = await Promise.all([
-          window.anyremote.localFs.homeDir(),
-          window.anyremote.sftp.homeDir(sid)
+          window.deskmux.localFs.homeDir(),
+          window.deskmux.sftp.homeDir(sid)
         ])
         if (cancelled) return
         setPhase('ready')
@@ -299,7 +299,7 @@ export default function FileManagerPanel() {
       unsubProgress?.()
       const sid = sessionIdRef.current
       sessionIdRef.current = null
-      if (sid !== null) void window.anyremote.ssh.close(sid)
+      if (sid !== null) void window.deskmux.ssh.close(sid)
       filesStore.getState().reset()
     }
   }, [context, retryCount, connectErrorText, loadLocal, loadRemote])
@@ -339,13 +339,13 @@ export default function FileManagerPanel() {
     const sid = sessionIdRef.current
     const dir = filesStore.getState().remotePath
     if (sid === null || dir === null) return
-    const paths = await window.anyremote.dialog.pickFiles()
+    const paths = await window.deskmux.dialog.pickFiles()
     if (paths.length === 0) return
     for (const localPath of paths) {
       const name = baseName(localPath)
       const remote = joinPath(dir, name)
       enqueueTransfer(
-        runTransfer(name, 'upload', () => window.anyremote.sftp.upload(sid, localPath, remote))
+        runTransfer(name, 'upload', () => window.deskmux.sftp.upload(sid, localPath, remote))
       )
     }
     // Refresh the listing once the batch has drained.
@@ -362,12 +362,12 @@ export default function FileManagerPanel() {
     if (sid === null || dir === null || sel.length !== 1) return
     const entry = entries.find((e) => e.name === sel[0])
     if (!entry || entry.type === 'directory') return
-    const localPath = await window.anyremote.dialog.pickSavePath(entry.name)
+    const localPath = await window.deskmux.dialog.pickSavePath(entry.name)
     if (localPath === null) return
     const remote = joinPath(dir, entry.name)
     enqueueTransfer(
       runTransfer(entry.name, 'download', () =>
-        window.anyremote.sftp.download(sid, remote, localPath)
+        window.deskmux.sftp.download(sid, remote, localPath)
       )
     )
   }, [enqueueTransfer, runTransfer])
@@ -378,7 +378,7 @@ export default function FileManagerPanel() {
     const dir = filesStore.getState().remotePath
     if (sid === null || dir === null || name === '') return
     try {
-      await window.anyremote.sftp.mkdir(sid, joinPath(dir, name))
+      await window.deskmux.sftp.mkdir(sid, joinPath(dir, name))
       setMkdirOpen(false)
       setMkdirName('')
       await loadRemote(dir)
@@ -393,7 +393,7 @@ export default function FileManagerPanel() {
     const { remotePath: dir, selectedRemote: sel } = filesStore.getState()
     if (sid === null || dir === null || sel.length !== 1 || name === '') return
     try {
-      await window.anyremote.sftp.rename(sid, joinPath(dir, sel[0]), joinPath(dir, name))
+      await window.deskmux.sftp.rename(sid, joinPath(dir, sel[0]), joinPath(dir, name))
       setRenameOpen(false)
       await loadRemote(dir)
     } catch (err) {
@@ -411,8 +411,8 @@ export default function FileManagerPanel() {
       try {
         // rmdir on a non-empty directory fails; the server message is toasted
         // verbatim so the user sees the real reason.
-        if (entry.type === 'directory') await window.anyremote.sftp.deleteDir(sid, p)
-        else await window.anyremote.sftp.deleteFile(sid, p)
+        if (entry.type === 'directory') await window.deskmux.sftp.deleteDir(sid, p)
+        else await window.deskmux.sftp.deleteFile(sid, p)
       } catch (err) {
         messageApi.error(errorMessage(err))
       }

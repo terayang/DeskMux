@@ -76,7 +76,7 @@ export default function EditConnectionModal({ conn, onClose }: EditConnectionMod
     setScanState('scanning')
     setScanReport(null)
     let cancelled = false
-    void window.anyremote.scan(conn.host)
+    void window.deskmux.scan(conn.host)
       .then((report) => {
         if (cancelled) return
         setScanReport(report)
@@ -85,7 +85,7 @@ export default function EditConnectionModal({ conn, onClose }: EditConnectionMod
       .catch(() => {
         if (!cancelled) setScanState('failed')
       })
-    void window.anyremote.connections
+    void window.deskmux.connections
       .get(conn.id)
       .then((full) => {
         if (cancelled || full?.secret === undefined) return

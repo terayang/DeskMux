@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"anyremote/internal/vncbridge"
+	"deskmux/internal/vncbridge"
 )
 
 // clientSetEncodings: [Raw, ZRLE, cursor pseudo-encoding].

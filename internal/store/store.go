@@ -66,7 +66,9 @@ var ErrSecretNotFound = errors.New("store: secret not found")
 // secretKey namespaces one connection's keychain entry.
 func secretKey(id string) string { return "conn:" + id }
 
-// keyringService groups every AnyRemote entry inside the OS keychain.
+// keyringService groups every keychain entry under one service name.
+// "AnyRemote" is a legacy identifier kept for user-data continuity
+// (config dir / keychain entries predate the DeskMux rename).
 const keyringService = "AnyRemote"
 
 // keyringSecrets is the production SecretStore backed by zalando/go-keyring
@@ -150,7 +152,9 @@ type Store struct {
 }
 
 // New opens the store rooted at dataDir (production: os.UserConfigDir()/
-// AnyRemote), loading any existing connections.json. A missing file means an
+// AnyRemote — legacy identifier kept for user-data continuity, predating the
+// DeskMux rename), loading any existing connections.json. A missing file
+// means an
 // empty store; an unreadable or legacy-format file is set aside (see load).
 // secrets must be non-nil (KeyringSecrets in production, in-memory in tests).
 // The store reports the keychain mode; NewWithMode picks the backend from

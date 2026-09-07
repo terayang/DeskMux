@@ -157,7 +157,7 @@ export function serializeError(err: unknown, mapCode?: IpcErrorCodeMapper): IpcE
  * prefixes handler errors with "Error invoking remote method '<channel>':",
  * so the marker is searched for, never anchored at position 0.
  */
-const IPC_ERROR_MARKER = '[[anyremote-ipc-error]]'
+const IPC_ERROR_MARKER = '[[deskmux-ipc-error]]'
 
 /** Main-process side: wraps a failure into the transportable Error to throw. */
 export function toTransportError(err: unknown, mapCode?: IpcErrorCodeMapper): Error {

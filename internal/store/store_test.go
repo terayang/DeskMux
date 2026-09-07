@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"anyremote/internal/store"
+	"deskmux/internal/store"
 )
 
 // memorySecrets is the in-memory SecretStore injected into the store; the

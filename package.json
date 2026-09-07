@@ -1,6 +1,6 @@
 {
-  "name": "anyremote",
-  "version": "0.2.1",
+  "name": "deskmux",
+  "version": "0.2.2",
   "private": true,
   "scripts": {
     "dev": "wails dev",
@@ -9,8 +9,8 @@
     "test": "go test ./...",
     "dist": "npm run dist:arm64 && npm run dist:x64",
     "predist": "node scripts/bump-version.mjs",
-    "dist:arm64": "wails build -platform darwin/arm64 -clean && bash scripts/build-dmg.sh build/bin/AnyRemote.app arm64",
-    "dist:x64": "wails build -platform darwin/amd64 -clean && bash scripts/build-dmg.sh build/bin/AnyRemote.app x64",
+    "dist:arm64": "wails build -platform darwin/arm64 -clean && bash scripts/build-dmg.sh build/bin/DeskMux.app arm64",
+    "dist:x64": "wails build -platform darwin/amd64 -clean && bash scripts/build-dmg.sh build/bin/DeskMux.app x64",
     "predist:win": "node scripts/bump-version.mjs",
     "dist:win": "wails build -platform windows/amd64 -nsis && bash scripts/rename-win-artifacts.sh",
     "version:bump": "node scripts/bump-version.mjs"

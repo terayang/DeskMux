@@ -38,7 +38,7 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"anyremote/internal/rfb"
+	"deskmux/internal/rfb"
 )
 
 const defaultTimeout = 10 * time.Second

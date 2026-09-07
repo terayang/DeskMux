@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: 讨论区 / Discussions
-    url: https://github.com/terayang/AnyRemote/discussions
+    url: https://github.com/terayang/DeskMux/discussions
     about: 使用问题、想法交流、经验分享请移步讨论区
   - name: 下载与更新 / Releases
-    url: https://github.com/terayang/AnyRemote/releases
+    url: https://github.com/terayang/DeskMux/releases
     about: 各版本安装包下载与完整 release notes

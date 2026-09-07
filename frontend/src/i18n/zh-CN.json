@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "AnyRemote",
+    "title": "DeskMux",
     "tagline": "输入目标地址，自动探测可用的远程协议",
     "targetPlaceholder": "输入目标 IP 或主机名"
   },

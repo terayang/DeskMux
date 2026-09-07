@@ -2,7 +2,7 @@
 
 [English](#contributing-english-summary) | [中文](#参与贡献)
 
-感谢你对 AnyRemote 的兴趣！本文档说明开发环境、常用命令、代码规范与 PR 流程。
+感谢你对 DeskMux 的兴趣！本文档说明开发环境、常用命令、代码规范与 PR 流程。
 
 ## 参与贡献
 
@@ -73,7 +73,7 @@ npm run dist:win   # Windows NSIS 安装包 + 便携版 → build/bin/
 
 ## Contributing (English summary)
 
-Thanks for your interest in AnyRemote!
+Thanks for your interest in DeskMux!
 
 - **Prerequisites**: Go 1.26, Node.js 22+, wails CLI v2.13 (`go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0`, with `~/go/bin` on PATH)
 - **Setup**: `npm install && npm --prefix frontend install`

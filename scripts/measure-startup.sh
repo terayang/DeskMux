@@ -18,14 +18,14 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-WAILS_BIN="build/bin/AnyRemote.app/Contents/MacOS/AnyRemote"
+WAILS_BIN="build/bin/DeskMux.app/Contents/MacOS/DeskMux"
 ELECTRON_BIN="dist/mac-arm64/AnyRemote.app/Contents/MacOS/AnyRemote"
 RUNS=3
 TIMEOUT=30
 
 # Kill stale instances from earlier runs so single-instance locks can't
 # short-circuit a measured launch.
-pkill -f 'AnyRemote.app/Contents/MacOS/AnyRemote' 2>/dev/null || true
+pkill -f 'DeskMux.app/Contents/MacOS/DeskMux' 2>/dev/null || true
 sleep 1
 
 TMP="$(mktemp -d)"

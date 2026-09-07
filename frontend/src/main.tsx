@@ -1,4 +1,4 @@
-// The bridge installs window.anyremote (the Wails IPC facade); it must run
+// The bridge installs window.deskmux (the Wails IPC facade); it must run
 // before any component/store module so the API is present at first render.
 import './bridge'
 import { StrictMode } from 'react'

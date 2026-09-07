@@ -107,13 +107,13 @@ export default function TerminalPanel() {
       if (sessionId === null) return
       if (term.cols === lastSize.cols && term.rows === lastSize.rows) return
       lastSize = { cols: term.cols, rows: term.rows }
-      window.anyremote.ssh.resize(sessionId, term.cols, term.rows)
+      window.deskmux.ssh.resize(sessionId, term.cols, term.rows)
     })
     ro.observe(host)
 
     void (async () => {
       try {
-        const id = await window.anyremote.ssh.connect({
+        const id = await window.deskmux.ssh.connect({
           host: context.target,
           port: SSH_PORT,
           username: context.credentials.username,
@@ -122,20 +122,20 @@ export default function TerminalPanel() {
           passphrase: context.credentials.passphrase
         })
         if (cancelled) {
-          void window.anyremote.ssh.close(id).catch(() => undefined)
+          void window.deskmux.ssh.close(id).catch(() => undefined)
           return
         }
         sessionId = id
         // Subscribe before opening the shell so no output chunk is lost.
         cleanups.push(
-          window.anyremote.ssh.onData(id, (data) => term.write(data)),
-          window.anyremote.ssh.onClose(id, () => {
+          window.deskmux.ssh.onData(id, (data) => term.write(data)),
+          window.deskmux.ssh.onClose(id, () => {
             if (!cancelled) getTerminalStore(scopeId).getState().markClosed()
           })
         )
-        await window.anyremote.ssh.openShell(id, size)
+        await window.deskmux.ssh.openShell(id, size)
         if (cancelled) return
-        const input = term.onData((data) => window.anyremote.ssh.write(id, data))
+        const input = term.onData((data) => window.deskmux.ssh.write(id, data))
         cleanups.push(() => input.dispose())
         getTerminalStore(scopeId).getState().markConnected()
         term.focus()
@@ -149,7 +149,7 @@ export default function TerminalPanel() {
       ro.disconnect()
       for (const undo of cleanups) undo()
       term.dispose()
-      if (sessionId !== null) void window.anyremote.ssh.close(sessionId).catch(() => undefined)
+      if (sessionId !== null) void window.deskmux.ssh.close(sessionId).catch(() => undefined)
     }
   }, [context, scopeId, attempt])
 

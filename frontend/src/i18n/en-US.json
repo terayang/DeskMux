@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "AnyRemote",
+    "title": "DeskMux",
     "tagline": "Enter a target address to auto-detect available remote protocols",
     "targetPlaceholder": "Enter target IP or hostname"
   },

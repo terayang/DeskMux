@@ -1,5 +1,5 @@
 /**
- * window.anyremote: the renderer's IPC facade, Wails edition. The AnyRemoteApi
+ * window.deskmux: the renderer's IPC facade, Wails edition. The DeskMuxApi
  * surface is verbatim-compatible with the retired Electron preload
  * (src/preload/index.ts, removed in M4), so every renderer component and
  * store keeps working unchanged.
@@ -40,8 +40,8 @@ import type { TargetScanReport } from '../../shared/scan'
 import type { FileEntry, ShellSize, SshAuthConfig } from '../../shared/ssh'
 import { createMockApi } from './mock'
 
-/** API surface exposed to the renderer as `window.anyremote`. */
-export interface AnyRemoteApi {
+/** API surface exposed to the renderer as `window.deskmux`. */
+export interface DeskMuxApi {
   versions: {
     electron: string
     node: string
@@ -119,7 +119,7 @@ export interface AnyRemoteApi {
  * explicitly empty secret (empty data) clears it, and delete of an unknown id
  * is a no-op.
  */
-function createMockConnections(): AnyRemoteApi['connections'] {
+function createMockConnections(): DeskMuxApi['connections'] {
   const entries = new Map<string, SavedConnection>()
   const summaryOf = (conn: SavedConnection): SavedConnectionSummary => {
     const { secret: _secret, ...summary } = conn
@@ -168,7 +168,7 @@ function subscribe<T extends unknown[]>(channel: string, cb: (...args: T) => voi
 }
 
 /** The Wails-backed implementation, delegating to the bound Go methods. */
-function createWailsApi(): AnyRemoteApi {
+function createWailsApi(): DeskMuxApi {
   return {
     // No Electron/Node under Wails; nothing in the renderer reads these.
     versions: { electron: '', node: '', chrome: '' },
@@ -255,12 +255,12 @@ function createWailsApi(): AnyRemoteApi {
 // (import.meta.env.DEV is false there).
 const useMock = import.meta.env.DEV && window.go === undefined
 
-const api: AnyRemoteApi = useMock ? createMockApi(createMockConnections()) : createWailsApi()
+const api: DeskMuxApi = useMock ? createMockApi(createMockConnections()) : createWailsApi()
 
 if (useMock) {
   console.warn(
-    '[bridge] Wails runtime not found — window.anyremote is backed by the dev mock (vite dev preview only).'
+    '[bridge] Wails runtime not found — window.deskmux is backed by the dev mock (vite dev preview only).'
   )
 }
 
-window.anyremote = api
+window.deskmux = api

@@ -8,7 +8,7 @@
 
 ### 支持的版本
 
-AnyRemote 处于 0.x 阶段，仅最新发布版本获得安全修复：
+DeskMux 处于 0.x 阶段，仅最新发布版本获得安全修复：
 
 | 版本 | 支持状态 |
 |------|----------|
@@ -33,7 +33,7 @@ AnyRemote 处于 0.x 阶段，仅最新发布版本获得安全修复：
 
 ### 凭据与密钥处理原则
 
-AnyRemote 处理大量远程连接凭据，安全设计遵循以下原则：
+DeskMux 处理大量远程连接凭据，安全设计遵循以下原则：
 
 - **系统钥匙串优先**：密码 / 私钥默认存 macOS Keychain / Windows Credential Manager（经 go-keyring）
 - **本地加密备选**：可在设置中切换为本机加密文件（AES-256-GCM，密钥由机器硬件 UUID 派生）
@@ -52,7 +52,7 @@ AnyRemote 处理大量远程连接凭据，安全设计遵循以下原则：
 
 ### Supported versions
 
-AnyRemote is in 0.x; only the latest release receives security fixes:
+DeskMux is in 0.x; only the latest release receives security fixes:
 
 | Version | Supported |
 |---------|-----------|

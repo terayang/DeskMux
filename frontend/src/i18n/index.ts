@@ -6,7 +6,7 @@ import enUS from './en-US.json'
 /** Languages the UI ships with; the default is Simplified Chinese. */
 export type AppLanguage = 'zh-CN' | 'en-US'
 
-const STORAGE_KEY = 'anyremote.language'
+const STORAGE_KEY = 'deskmux.language'
 
 /** Restores the language chosen last time (localStorage); zh-CN by default. */
 function initialLanguage(): AppLanguage {

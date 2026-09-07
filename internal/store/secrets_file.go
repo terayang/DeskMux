@@ -33,7 +33,9 @@ import (
 )
 
 // keyDerivationSalt domains the FileSecrets key so a machine-UUID hash used
-// anywhere else never collides with it.
+// anywhere else never collides with it. The "anyremote" tag is a legacy
+// identifier kept for user-data continuity: it is part of the KDF input for
+// every already-encrypted secrets.json, so it must never change.
 const keyDerivationSalt = "|anyremote-secret-v1"
 
 // FileSecrets implements SecretStore with AES-256-GCM sealed entries in a

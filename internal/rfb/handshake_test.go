@@ -29,7 +29,7 @@ import (
 	"testing"
 	"time"
 
-	"anyremote/internal/rfb"
+	"deskmux/internal/rfb"
 )
 
 // ---------------------------------------------------------------------------

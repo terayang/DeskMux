@@ -1,8 +1,8 @@
-import type { AnyRemoteApi } from './index'
+import type { DeskMuxApi } from './index'
 
 declare global {
   interface Window {
-    anyremote: AnyRemoteApi
+    deskmux: DeskMuxApi
   }
 }
 

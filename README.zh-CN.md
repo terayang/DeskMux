@@ -1,18 +1,18 @@
-# AnyRemote
+# DeskMux
 
-[![CI](https://github.com/terayang/AnyRemote/actions/workflows/ci.yml/badge.svg)](https://github.com/terayang/AnyRemote/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/terayang/AnyRemote)](https://github.com/terayang/AnyRemote/releases)
-[![License](https://img.shields.io/github/license/terayang/AnyRemote)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-blue)](https://github.com/terayang/AnyRemote/releases)
-[![Go](https://img.shields.io/github/go-mod/go-version/terayang/AnyRemote)](go.mod)
+[![CI](https://github.com/terayang/DeskMux/actions/workflows/ci.yml/badge.svg)](https://github.com/terayang/DeskMux/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/terayang/DeskMux)](https://github.com/terayang/DeskMux/releases)
+[![License](https://img.shields.io/github/license/terayang/DeskMux)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-blue)](https://github.com/terayang/DeskMux/releases)
+[![Go](https://img.shields.io/github/go-mod/go-version/terayang/DeskMux)](go.mod)
 
-[English](README.md) | **简体中文** | [Releases](https://github.com/terayang/AnyRemote/releases) | [Issues](https://github.com/terayang/AnyRemote/issues) | [Contributing](CONTRIBUTING.md)
+[English](README.md) | **简体中文** | [Releases](https://github.com/terayang/DeskMux/releases) | [Issues](https://github.com/terayang/DeskMux/issues) | [Contributing](CONTRIBUTING.md)
 
 ---
 
-AnyRemote 是一个跨平台（macOS / Windows）桌面远程会话管理器：输入目标 IP，自动探测其可用的远程协议（SSH / VNC / RDP / Telnet / FTP / SMB / HTTP(S)），多选后一键建立远程桌面、SSH 终端与 SFTP 文件管理会话。体验对标 1Remote / Tabby / Termius。
+DeskMux 是一个跨平台（macOS / Windows）桌面远程会话管理器：输入目标 IP，自动探测其可用的远程协议（SSH / VNC / RDP / Telnet / FTP / SMB / HTTP(S)），多选后一键建立远程桌面、SSH 终端与 SFTP 文件管理会话。体验对标 1Remote / Tabby / Termius。
 
-> 合规提示：AnyRemote 是远程管理工具，请仅在你拥有或被明确授权的设备上使用。开发者不对任何滥用行为负责。
+> 合规提示：DeskMux 是远程管理工具，请仅在你拥有或被明确授权的设备上使用。开发者不对任何滥用行为负责。
 
 ### 截图
 
@@ -36,16 +36,16 @@ AnyRemote 是一个跨平台（macOS / Windows）桌面远程会话管理器：�
 
 ### 下载与安装
 
-从 [GitHub Releases](https://github.com/terayang/AnyRemote/releases) 下载最新版本：
+从 [GitHub Releases](https://github.com/terayang/DeskMux/releases) 下载最新版本：
 
-- **macOS**：`AnyRemote-<version>-mac-arm64.dmg`（Apple Silicon）或 `AnyRemote-<version>-mac-x64.dmg`（Intel）
-- **Windows**：`AnyRemote-<version>-windows-x64-installer.exe`（NSIS 安装包，当前用户安装）或 `AnyRemote-<version>-windows-x64-portable.exe`（免安装便携版）
+- **macOS**：`DeskMux-<version>-mac-arm64.dmg`（Apple Silicon）或 `DeskMux-<version>-mac-x64.dmg`（Intel）
+- **Windows**：`DeskMux-<version>-windows-x64-installer.exe`（NSIS 安装包，当前用户安装）或 `DeskMux-<version>-windows-x64-portable.exe`（免安装便携版）
 
-开发版（每次 push 到 main 或 PR 的 CI 构建）在对应 [workflow run 页面](https://github.com/terayang/AnyRemote/actions/workflows/ci.yml)底部 artifacts 下载。
+开发版（每次 push 到 main 或 PR 的 CI 构建）在对应 [workflow run 页面](https://github.com/terayang/DeskMux/actions/workflows/ci.yml)底部 artifacts 下载。
 
 **安装包未做代码签名**，首次启动会被系统安全机制拦截，属正常现象：
 
-- **macOS**：右键（Control+点击）`AnyRemote.app` →「打开」→ 再次确认「打开」
+- **macOS**：右键（Control+点击）`DeskMux.app` →「打开」→ 再次确认「打开」
 - **Windows**：SmartScreen 蓝色提示中点「更多信息」→「仍要运行」
 
 详细指引见 [docs/RELEASE.md](docs/RELEASE.md)。
@@ -54,7 +54,7 @@ AnyRemote 是一个跨平台（macOS / Windows）桌面远程会话管理器：�
 
 ```bash
 npm install && npm --prefix frontend install
-npm run dist       # macOS：分别构建 arm64 与 x64 → dist/AnyRemote-<version>-mac-arm64.dmg 与 -mac-x64.dmg
+npm run dist       # macOS：分别构建 arm64 与 x64 → dist/DeskMux-<version>-mac-arm64.dmg 与 -mac-x64.dmg
 npm run dist:win   # Windows：安装包 + 便携版（带版本号）→ build/bin/
 ```
 
@@ -80,11 +80,11 @@ npm run typecheck  # go vet ./... + 前端 tsc --noEmit
 npm run build      # wails build → build/bin/（同时重新生成 frontend/wailsjs/ 绑定）
 ```
 
-参与贡献请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)；安全问题请见 [SECURITY.md](SECURITY.md)；版本历史见 [CHANGELOG.md](CHANGELOG.md) 与 [Releases](https://github.com/terayang/AnyRemote/releases)。
+参与贡献请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)；安全问题请见 [SECURITY.md](SECURITY.md)；版本历史见 [CHANGELOG.md](CHANGELOG.md) 与 [Releases](https://github.com/terayang/DeskMux/releases)。
 
 ### 技术架构
 
-Wails v2（Go 后端 + 系统 WebView 渲染），2026-07 由 Electron 迁移而来（动机与实测数据见 [docs/MIGRATION.md](docs/MIGRATION.md)：dmg 133MB→11MB、启动 340ms→241ms）。Go 单进程承载全部网络与协议层——协议指纹扫描器（`internal/scanner`）、带 keepalive 的 SSH/SFTP 会话（`internal/sshx`）、RFB 握手与 Apple DH 认证（`internal/rfb`）、WS↔TCP VNC 桥接（`internal/vncbridge`）、连接存储与凭据保管（`internal/store`，系统钥匙串或本地加密文件可选）；前端 React 18 + antd v5 + zustand + i18next 经 `frontend/src/bridge/` 的 `window.anyremote` 适配层调用 Wails 绑定，远程桌面用 noVNC、终端用 xterm.js。完整选型理由与模块结构见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)，打包发布见 [docs/RELEASE.md](docs/RELEASE.md)。
+Wails v2（Go 后端 + 系统 WebView 渲染），2026-07 由 Electron 迁移而来（动机与实测数据见 [docs/MIGRATION.md](docs/MIGRATION.md)：dmg 133MB→11MB、启动 340ms→241ms）。Go 单进程承载全部网络与协议层——协议指纹扫描器（`internal/scanner`）、带 keepalive 的 SSH/SFTP 会话（`internal/sshx`）、RFB 握手与 Apple DH 认证（`internal/rfb`）、WS↔TCP VNC 桥接（`internal/vncbridge`）、连接存储与凭据保管（`internal/store`，系统钥匙串或本地加密文件可选）；前端 React 18 + antd v5 + zustand + i18next 经 `frontend/src/bridge/` 的 `window.deskmux` 适配层调用 Wails 绑定，远程桌面用 noVNC、终端用 xterm.js。完整选型理由与模块结构见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)，打包发布见 [docs/RELEASE.md](docs/RELEASE.md)。
 
 ### Roadmap
 
@@ -95,7 +95,7 @@ Wails v2（Go 后端 + 系统 WebView 渲染），2026-07 由 Electron 迁移而
 ### 目录结构
 
 ```
-anyremote/
+deskmux/
 ├─ main.go / app.go / bindings.go   # Wails 入口、应用门面、绑定与桥接错误约定
 ├─ internal/                        # Go 服务层
 │  ├─ scanner/                      # 协议探测（端口扫描 + 指纹识别）

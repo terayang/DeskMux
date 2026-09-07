@@ -1,5 +1,5 @@
 /**
- * Static development mock for window.anyremote, active only under plain
+ * Static development mock for window.deskmux, active only under plain
  * `vite dev` when the Wails runtime is absent (import.meta.env.DEV &&
  * window.go === undefined, see ./index.ts). It exists so the UI can render
  * for frontend-only preview and Playwright screenshots without any Go
@@ -18,7 +18,7 @@ import {
 } from '../../shared/ipc'
 import type { TargetScanReport } from '../../shared/scan'
 import type { FileEntry } from '../../shared/ssh'
-import type { AnyRemoteApi } from './index'
+import type { DeskMuxApi } from './index'
 
 type Listener = (...args: never[]) => void
 
@@ -114,7 +114,7 @@ function nextVncBridge(host: string): { bridgeId: string; wsPort: number } {
  * Builds the mock facade. The saved-connections part is injected so mock and
  * Wails modes share the same in-memory implementation (list starts empty).
  */
-export function createMockApi(connections: AnyRemoteApi['connections']): AnyRemoteApi {
+export function createMockApi(connections: DeskMuxApi['connections']): DeskMuxApi {
   return {
     versions: { electron: '', node: '', chrome: '' },
     scan: async (host) => {

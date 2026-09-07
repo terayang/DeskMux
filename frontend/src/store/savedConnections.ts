@@ -3,7 +3,7 @@
  * safeStorage-backed list owned by the main process (src/main/store.ts) for
  * the workbench rail and the devices view.
  * Secrets never live here — list() returns summaries only; connecting fetches
- * the decrypted secret on demand via window.anyremote.connections.get.
+ * the decrypted secret on demand via window.deskmux.connections.get.
  */
 
 import { create } from 'zustand'
@@ -43,17 +43,17 @@ export const useSavedConnectionsStore = create<SavedConnectionsState>((set, get)
   loaded: false,
 
   refresh: async () => {
-    const connections = await window.anyremote.connections.list()
+    const connections = await window.deskmux.connections.list()
     set({ connections, loaded: true })
   },
 
   save: async (input) => {
-    await window.anyremote.connections.save(input)
+    await window.deskmux.connections.save(input)
     await get().refresh()
   },
 
   remove: async (id) => {
-    await window.anyremote.connections.delete(id)
+    await window.deskmux.connections.delete(id)
     await get().refresh()
   }
 }))

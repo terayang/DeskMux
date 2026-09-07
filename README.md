@@ -1,18 +1,18 @@
-# AnyRemote
+# DeskMux
 
-[![CI](https://github.com/terayang/AnyRemote/actions/workflows/ci.yml/badge.svg)](https://github.com/terayang/AnyRemote/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/terayang/AnyRemote)](https://github.com/terayang/AnyRemote/releases)
-[![License](https://img.shields.io/github/license/terayang/AnyRemote)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-blue)](https://github.com/terayang/AnyRemote/releases)
-[![Go](https://img.shields.io/github/go-mod/go-version/terayang/AnyRemote)](go.mod)
+[![CI](https://github.com/terayang/DeskMux/actions/workflows/ci.yml/badge.svg)](https://github.com/terayang/DeskMux/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/terayang/DeskMux)](https://github.com/terayang/DeskMux/releases)
+[![License](https://img.shields.io/github/license/terayang/DeskMux)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-blue)](https://github.com/terayang/DeskMux/releases)
+[![Go](https://img.shields.io/github/go-mod/go-version/terayang/DeskMux)](go.mod)
 
-**English** | [简体中文](README.zh-CN.md) | [Releases](https://github.com/terayang/AnyRemote/releases) | [Issues](https://github.com/terayang/AnyRemote/issues) | [Contributing](CONTRIBUTING.md)
+**English** | [简体中文](README.zh-CN.md) | [Releases](https://github.com/terayang/DeskMux/releases) | [Issues](https://github.com/terayang/DeskMux/issues) | [Contributing](CONTRIBUTING.md)
 
 ---
 
-AnyRemote is a cross-platform (macOS / Windows) desktop remote session manager: enter a target IP, auto-detect its available remote protocols (SSH / VNC / RDP / Telnet / FTP / SMB / HTTP(S)), pick several, and connect in one click — remote desktop, SSH terminal, and SFTP file management in a single app, on par with 1Remote / Tabby / Termius.
+DeskMux is a cross-platform (macOS / Windows) desktop remote session manager: enter a target IP, auto-detect its available remote protocols (SSH / VNC / RDP / Telnet / FTP / SMB / HTTP(S)), pick several, and connect in one click — remote desktop, SSH terminal, and SFTP file management in a single app, on par with 1Remote / Tabby / Termius.
 
-> Fair use: AnyRemote is a remote administration tool — use it only on devices you own or are explicitly authorized to manage. The authors are not responsible for any misuse.
+> Fair use: DeskMux is a remote administration tool — use it only on devices you own or are explicitly authorized to manage. The authors are not responsible for any misuse.
 
 ### Screenshots
 
@@ -36,16 +36,16 @@ AnyRemote is a cross-platform (macOS / Windows) desktop remote session manager: 
 
 ### Download & install
 
-Grab the latest version from [GitHub Releases](https://github.com/terayang/AnyRemote/releases):
+Grab the latest version from [GitHub Releases](https://github.com/terayang/DeskMux/releases):
 
-- **macOS**: `AnyRemote-<version>-mac-arm64.dmg` (Apple Silicon) or `AnyRemote-<version>-mac-x64.dmg` (Intel)
-- **Windows**: `AnyRemote-<version>-windows-x64-installer.exe` (NSIS installer, per-user) or `AnyRemote-<version>-windows-x64-portable.exe` (no-install portable)
+- **macOS**: `DeskMux-<version>-mac-arm64.dmg` (Apple Silicon) or `DeskMux-<version>-mac-x64.dmg` (Intel)
+- **Windows**: `DeskMux-<version>-windows-x64-installer.exe` (NSIS installer, per-user) or `DeskMux-<version>-windows-x64-portable.exe` (no-install portable)
 
-Development builds (CI on every push to main or PR) are available as artifacts at the bottom of the corresponding [workflow run page](https://github.com/terayang/AnyRemote/actions/workflows/ci.yml).
+Development builds (CI on every push to main or PR) are available as artifacts at the bottom of the corresponding [workflow run page](https://github.com/terayang/DeskMux/actions/workflows/ci.yml).
 
 **The installers are not code-signed**, so the OS will warn on first launch — this is expected:
 
-- **macOS**: right-click (Control-click) `AnyRemote.app` → **Open** → confirm **Open** again
+- **macOS**: right-click (Control-click) `DeskMux.app` → **Open** → confirm **Open** again
 - **Windows**: on the blue SmartScreen prompt, click **More info** → **Run anyway**
 
 See [docs/RELEASE.md](docs/RELEASE.md) for details.
@@ -54,7 +54,7 @@ See [docs/RELEASE.md](docs/RELEASE.md) for details.
 
 ```bash
 npm install && npm --prefix frontend install
-npm run dist       # macOS: per-arch builds → dist/AnyRemote-<version>-mac-arm64.dmg and -mac-x64.dmg
+npm run dist       # macOS: per-arch builds → dist/DeskMux-<version>-mac-arm64.dmg and -mac-x64.dmg
 npm run dist:win   # Windows: versioned installer + portable → build/bin/
 ```
 
@@ -63,7 +63,7 @@ Both packaging commands auto-bump the patch version first (via `scripts/bump-ver
 ### FAQ
 
 - **Keychain prompt when saving a connection?** Passwords / private keys live in the OS keychain by default, and macOS asks for permission on first write — click **Allow**. You can also switch to "Local file" storage (AES-256-GCM, undecryptable off this machine, but weaker than the keychain) in Settings (gear icon at the bottom of the left activity bar).
-- **No VNC mouse cursor?** Apple's Screen Sharing delivers cursor shapes unreliably, so AnyRemote defaults to the local cursor (switchable to "Remote cursor" in the toolbar). If it ever goes invisible, toggle the cursor mode once.
+- **No VNC mouse cursor?** Apple's Screen Sharing delivers cursor shapes unreliably, so DeskMux defaults to the local cursor (switchable to "Remote cursor" in the toolbar). If it ever goes invisible, toggle the cursor mode once.
 - **Clipboard sync not working for Chinese text?** The RFB clipboard message (CutText) is Latin-1 only; macOS Screen Sharing does not implement any extended-clipboard encoding, so non-Latin-1 characters cannot cross the VNC clipboard — this is a protocol limitation, not a bug.
 - **Laggy or blurry desktop?** Open the toolbar gear ("Display"): **ZRLE** encoding + **16-bit** color depth + **Saver** compression is recommended; for crisp text choose "Actual size" scaling.
 - **Which protocols are supported?** SSH terminal, SFTP file manager, and VNC desktop (including macOS Apple DH auth). RDP / Telnet / FTP are detection-only for now — see the roadmap.
@@ -80,11 +80,11 @@ npm run typecheck  # go vet ./... + frontend tsc --noEmit
 npm run build      # wails build → build/bin/ (regenerates frontend/wailsjs/ bindings)
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) to get involved, [SECURITY.md](SECURITY.md) for security issues, and [CHANGELOG.md](CHANGELOG.md) / [Releases](https://github.com/terayang/AnyRemote/releases) for version history.
+See [CONTRIBUTING.md](CONTRIBUTING.md) to get involved, [SECURITY.md](SECURITY.md) for security issues, and [CHANGELOG.md](CHANGELOG.md) / [Releases](https://github.com/terayang/DeskMux/releases) for version history.
 
 ### Architecture
 
-Wails v2 (Go backend + system webview), migrated from Electron in 2026-07 (rationale and measurements: [docs/MIGRATION.md](docs/MIGRATION.md) — dmg 133MB→11MB, first window 340ms→241ms). A single Go process carries the entire network & protocol layer — a protocol fingerprint scanner (`internal/scanner`), SSH/SFTP sessions with keepalive (`internal/sshx`), RFB handshake with Apple DH auth (`internal/rfb`), a WS↔TCP VNC bridge (`internal/vncbridge`), and connection storage with configurable secrets backend (`internal/store`, OS keychain or local encrypted file). The React 18 + antd v5 + zustand + i18next frontend calls Wails bindings through the `window.anyremote` adapter in `frontend/src/bridge/`; noVNC renders the remote desktop and xterm.js the terminal. Full rationale and module layout: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); packaging & release: [docs/RELEASE.md](docs/RELEASE.md).
+Wails v2 (Go backend + system webview), migrated from Electron in 2026-07 (rationale and measurements: [docs/MIGRATION.md](docs/MIGRATION.md) — dmg 133MB→11MB, first window 340ms→241ms). A single Go process carries the entire network & protocol layer — a protocol fingerprint scanner (`internal/scanner`), SSH/SFTP sessions with keepalive (`internal/sshx`), RFB handshake with Apple DH auth (`internal/rfb`), a WS↔TCP VNC bridge (`internal/vncbridge`), and connection storage with configurable secrets backend (`internal/store`, OS keychain or local encrypted file). The React 18 + antd v5 + zustand + i18next frontend calls Wails bindings through the `window.deskmux` adapter in `frontend/src/bridge/`; noVNC renders the remote desktop and xterm.js the terminal. Full rationale and module layout: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); packaging & release: [docs/RELEASE.md](docs/RELEASE.md).
 
 ### Roadmap
 
@@ -95,7 +95,7 @@ Wails v2 (Go backend + system webview), migrated from Electron in 2026-07 (ratio
 ### Project layout
 
 ```
-anyremote/
+deskmux/
 ├─ main.go / app.go / bindings.go   # Wails entry, app facade, bindings & error convention
 ├─ internal/                        # Go service layer
 │  ├─ scanner/                      # Protocol probing (port scan + fingerprinting)

@@ -10,12 +10,12 @@
 
 | 平台 | 产物 | 构建方式 |
 |------|------|----------|
-| macOS (Apple Silicon) | `AnyRemote-<version>-mac-arm64.dmg` | CI macos runner / 本机 `npm run dist` |
-| macOS (Intel) | `AnyRemote-<version>-mac-x64.dmg` | CI macos runner / 本机 `npm run dist` |
-| Windows (x64) | `AnyRemote-<version>-windows-x64-installer.exe`（NSIS 安装包） | CI macos runner（交叉构建）/ 本机 `npm run dist:win` |
-| Windows (x64) | `AnyRemote-<version>-windows-x64-portable.exe`（免安装便携版） | CI macos runner（交叉构建）/ 本机 `npm run dist:win` |
+| macOS (Apple Silicon) | `DeskMux-<version>-mac-arm64.dmg` | CI macos runner / 本机 `npm run dist` |
+| macOS (Intel) | `DeskMux-<version>-mac-x64.dmg` | CI macos runner / 本机 `npm run dist` |
+| Windows (x64) | `DeskMux-<version>-windows-x64-installer.exe`（NSIS 安装包） | CI macos runner（交叉构建）/ 本机 `npm run dist:win` |
+| Windows (x64) | `DeskMux-<version>-windows-x64-portable.exe`（免安装便携版） | CI macos runner（交叉构建）/ 本机 `npm run dist:win` |
 
-正式版本发布在 [GitHub Releases](https://github.com/terayang/AnyRemote/releases)（打版本 tag 自动构建并挂载产物）。每次 push 到 main 或 PR 的 CI 构建产物（开发版）上传为 Actions artifacts：`anyremote-wails-macos`（dmg）、`anyremote-wails-windows`（NSIS 安装包 + 免安装便携版 exe），在对应 workflow run 页面底部下载。
+正式版本发布在 [GitHub Releases](https://github.com/terayang/DeskMux/releases)（打版本 tag 自动构建并挂载产物）。每次 push 到 main 或 PR 的 CI 构建产物（开发版）上传为 Actions artifacts：`deskmux-wails-macos`（dmg）、`deskmux-wails-windows`（NSIS 安装包 + 免安装便携版 exe），在对应 workflow run 页面底部下载。
 
 ### 本地打包
 
@@ -23,9 +23,9 @@
 
 ```bash
 npm install && npm --prefix frontend install
-npm run dist       # macOS：分别构建 arm64 与 x64 → dist/AnyRemote-<version>-mac-arm64.dmg 与 -mac-x64.dmg
+npm run dist       # macOS：分别构建 arm64 与 x64 → dist/DeskMux-<version>-mac-arm64.dmg 与 -mac-x64.dmg
 npm run dist:win   # Windows：wails build -platform windows/amd64 -nsis + 重命名脚本
-                   #   → build/bin/AnyRemote-<version>-windows-x64-installer.exe 与 -portable.exe
+                   #   → build/bin/DeskMux-<version>-windows-x64-installer.exe 与 -portable.exe
 ```
 
 打包要点：
@@ -41,19 +41,19 @@ npm run dist:win   # Windows：wails build -platform windows/amd64 -nsis + 重�
 
 #### macOS（Gatekeeper）
 
-1. 打开 dmg，把 `AnyRemote.app` 拖入「应用程序」。
+1. 打开 dmg，把 `DeskMux.app` 拖入「应用程序」。
 2. 首次启动**不要双击**（可能提示"已损坏"或"无法验证开发者"）。
-3. 在「应用程序」中**右键（或 Control+点击）`AnyRemote.app` → 打开**。
+3. 在「应用程序」中**右键（或 Control+点击）`DeskMux.app` → 打开**。
 4. 在弹出的对话框中再次点击**打开**。此后可正常双击启动。
 
-如仍被拦截：系统设置 → 隐私与安全性 → 安全性一节会出现"仍要打开 AnyRemote"按钮，点击即可。
-也可在终端执行一次性移除隔离属性：`xattr -dr com.apple.quarantine /Applications/AnyRemote.app`。
+如仍被拦截：系统设置 → 隐私与安全性 → 安全性一节会出现"仍要打开 DeskMux"按钮，点击即可。
+也可在终端执行一次性移除隔离属性：`xattr -dr com.apple.quarantine /Applications/DeskMux.app`。
 
-另外，首次保存带密码的连接时，系统可能弹出钥匙串访问授权（"AnyRemote 想要使用钥匙串"），选择"始终允许"即可，属正常现象。
+另外，首次保存带密码的连接时，系统可能弹出钥匙串访问授权（"DeskMux 想要使用钥匙串"），选择"始终允许"即可，属正常现象。
 
 #### Windows（SmartScreen）
 
-1. 运行 `AnyRemote-amd64-installer.exe`。
+1. 运行 `DeskMux-amd64-installer.exe`。
 2. 出现蓝色「Windows 已保护你的电脑」提示时，点击**更多信息** → **仍要运行**。
 3. 安装为当前用户安装（无需管理员权限），可选择安装目录，默认创建桌面快捷方式。
 4. Windows 端依赖系统 WebView2 Runtime（Windows 10 1803+ / 11 通常已内置；缺失时安装包/系统会引导安装）。
@@ -70,12 +70,12 @@ npm run dist:win   # Windows：wails build -platform windows/amd64 -nsis + 重�
 
 | Platform | Artifact | Built by |
 |----------|----------|----------|
-| macOS (Apple Silicon) | `AnyRemote-<version>-mac-arm64.dmg` | CI macos runner / local `npm run dist` |
-| macOS (Intel) | `AnyRemote-<version>-mac-x64.dmg` | CI macos runner / local `npm run dist` |
-| Windows (x64) | `AnyRemote-<version>-windows-x64-installer.exe` (NSIS installer) | CI macos runner (cross-build) / local `npm run dist:win` |
-| Windows (x64) | `AnyRemote-<version>-windows-x64-portable.exe` (no-install portable) | CI macos runner (cross-build) / local `npm run dist:win` |
+| macOS (Apple Silicon) | `DeskMux-<version>-mac-arm64.dmg` | CI macos runner / local `npm run dist` |
+| macOS (Intel) | `DeskMux-<version>-mac-x64.dmg` | CI macos runner / local `npm run dist` |
+| Windows (x64) | `DeskMux-<version>-windows-x64-installer.exe` (NSIS installer) | CI macos runner (cross-build) / local `npm run dist:win` |
+| Windows (x64) | `DeskMux-<version>-windows-x64-portable.exe` (no-install portable) | CI macos runner (cross-build) / local `npm run dist:win` |
 
-Stable versions are published to [GitHub Releases](https://github.com/terayang/AnyRemote/releases) (built and attached automatically on version tags). Every CI build (push to main or PR) uploads development builds as Actions artifacts: `anyremote-wails-macos` (dmg) and `anyremote-wails-windows` (NSIS installer + no-install portable exe). Download them at the bottom of the workflow run page.
+Stable versions are published to [GitHub Releases](https://github.com/terayang/DeskMux/releases) (built and attached automatically on version tags). Every CI build (push to main or PR) uploads development builds as Actions artifacts: `deskmux-wails-macos` (dmg) and `deskmux-wails-windows` (NSIS installer + no-install portable exe). Download them at the bottom of the workflow run page.
 
 ### Local packaging
 
@@ -83,9 +83,9 @@ Prerequisites: Go 1.26 + wails CLI v2.13 (`~/go/bin` on PATH) + Node.js.
 
 ```bash
 npm install && npm --prefix frontend install
-npm run dist       # macOS: per-arch builds → dist/AnyRemote-<version>-mac-arm64.dmg and -mac-x64.dmg
+npm run dist       # macOS: per-arch builds → dist/DeskMux-<version>-mac-arm64.dmg and -mac-x64.dmg
 npm run dist:win   # Windows: wails build -platform windows/amd64 -nsis + rename script
-                   #   → build/bin/AnyRemote-<version>-windows-x64-installer.exe and -portable.exe
+                   #   → build/bin/DeskMux-<version>-windows-x64-installer.exe and -portable.exe
 ```
 
 Packaging notes:
@@ -101,19 +101,19 @@ Current artifacts are **not code-signed or notarized** (no Apple Developer ID / 
 
 #### macOS (Gatekeeper)
 
-1. Open the dmg and drag `AnyRemote.app` into Applications.
+1. Open the dmg and drag `DeskMux.app` into Applications.
 2. Do **not** double-click it the first time (it may report "damaged" or "unidentified developer").
-3. In Applications, **right-click (or Control-click) `AnyRemote.app` → Open**.
+3. In Applications, **right-click (or Control-click) `DeskMux.app` → Open**.
 4. Click **Open** again in the dialog. It launches normally from then on.
 
-If still blocked: System Settings → Privacy & Security → an "Open Anyway" button for AnyRemote appears — click it.
-Alternatively, remove the quarantine attribute once in Terminal: `xattr -dr com.apple.quarantine /Applications/AnyRemote.app`.
+If still blocked: System Settings → Privacy & Security → an "Open Anyway" button for DeskMux appears — click it.
+Alternatively, remove the quarantine attribute once in Terminal: `xattr -dr com.apple.quarantine /Applications/DeskMux.app`.
 
-Also, the first time you save a connection with a password, macOS may prompt for keychain access ("AnyRemote wants to use your keychain") — choose **Always Allow**; this is expected.
+Also, the first time you save a connection with a password, macOS may prompt for keychain access ("DeskMux wants to use your keychain") — choose **Always Allow**; this is expected.
 
 #### Windows (SmartScreen)
 
-1. Run `AnyRemote-amd64-installer.exe`.
+1. Run `DeskMux-amd64-installer.exe`.
 2. On the blue "Windows protected your PC" prompt, click **More info** → **Run anyway**.
 3. The installer installs per-user (no admin rights), lets you pick the install directory, and creates a desktop shortcut by default.
 4. The app relies on the system WebView2 Runtime (preinstalled on Windows 10 1803+ / 11; if missing, the installer/OS will guide you through installing it).

@@ -1,4 +1,4 @@
-module anyremote
+module deskmux
 
 go 1.25.0
 

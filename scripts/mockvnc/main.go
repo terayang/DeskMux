@@ -13,7 +13,7 @@ import (
 	"os"
 	"time"
 
-	"anyremote/internal/vncbridge"
+	"deskmux/internal/vncbridge"
 )
 
 const (

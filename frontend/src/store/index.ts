@@ -142,7 +142,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (get().scanning || host === '') return
     set({ scanning: true, scanReport: null, scanError: null, selected: [] })
     try {
-      const scanReport = await window.anyremote.scan(host)
+      const scanReport = await window.deskmux.scan(host)
       set({ scanning: false, scanReport })
     } catch (err) {
       set({

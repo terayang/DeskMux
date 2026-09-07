@@ -1,5 +1,5 @@
 name: Bug 报告
-description: 报告 AnyRemote 的缺陷（崩溃、连接失败、界面异常等）
+description: 报告 DeskMux 的缺陷（崩溃、连接失败、界面异常等）
 title: "[Bug]: "
 labels: ["bug"]
 body:
@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         感谢反馈！请尽量填写完整信息，帮助我们快速定位问题。
-        安全漏洞请勿在此公开报告，请按 [SECURITY.md](https://github.com/terayang/AnyRemote/blob/main/SECURITY.md) 私下联系。
+        安全漏洞请勿在此公开报告，请按 [SECURITY.md](https://github.com/terayang/DeskMux/blob/main/SECURITY.md) 私下联系。
   - type: textarea
     id: description
     attributes:
@@ -21,7 +21,7 @@ body:
       label: 复现步骤
       description: 能稳定复现的操作步骤
       placeholder: |
-        1. 打开 AnyRemote
+        1. 打开 DeskMux
         2. 输入目标 IP ...
         3. 点击 ...
     validations:
@@ -36,7 +36,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: AnyRemote 版本
+      label: DeskMux 版本
       description: 如 0.1.2；CI 开发版请附 workflow run 链接
       placeholder: 0.1.2
     validations:
