@@ -13,3 +13,4 @@ frontend/dist/
 frontend/wailsjs/
 build/windows/installer/tmp/
 tmp/
+.kimi-code/
