@@ -13,6 +13,13 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 
+// CI (tag release builds) runs the same npm scripts; the released version
+// must match the tag, so never bump there.
+if (process.env.CI) {
+  console.log('CI environment detected — version bump skipped')
+  process.exit(0)
+}
+
 const kind = process.argv[2] ?? 'patch'
 if (!['major', 'minor', 'patch'].includes(kind)) {
   console.error(`usage: node scripts/bump-version.mjs [major|minor|patch]`)
