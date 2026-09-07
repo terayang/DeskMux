@@ -5,7 +5,6 @@ import { ipcErrorMessage } from '../../shared/ipc'
 import { PROTOCOLS } from '../../shared/protocols'
 import { useAppStore } from '../store'
 import { savedToCredentials, useSavedConnectionsStore } from '../store/savedConnections'
-import { useSessionStore } from '../store/session'
 import CredentialsModal from './CredentialsModal'
 import ProtocolCard from './ProtocolCard'
 
@@ -17,16 +16,17 @@ interface NewConnectionModalProps {
 }
 
 /**
- * In-workspace "new connection" flow (ux-review v1-A2): the scan page's
- * three-step connect flow — target input, protocol cards, credentials —
- * inside a modal, so a new target can be reached without leaving the session
- * page. It deliberately reuses the global scan/session stores (same
- * targetAddress, startScan, toggleProtocol, beginSession, ProtocolCard,
- * CredentialsModal), so behavior matches the scan page exactly.
+ * In-workspace "new connection" flow (ux-review v1-A2): the connect flow —
+ * target input, protocol cards, credentials — inside a modal, so a new target
+ * can be reached from anywhere in the workspace. It deliberately reuses the
+ * global scan/session stores (same targetAddress, startScan, toggleProtocol,
+ * beginSession, ProtocolCard, CredentialsModal). Opened via the devices
+ * view's add-device button, the command palette's actions, or the welcome
+ * panel (which can pass `openNewConnection({ scan: true })` to start
+ * scanning the entered address immediately).
  *
- * The single-session model is kept: connecting a new target replaces the
- * live session, so every connect path in this modal first confirms with
- * `session.switchNewConfirm`; cancelling leaves the session untouched.
+ * Multi-session model (F6): connecting always ADDS a session — live sessions
+ * are never replaced, so no switch confirmation is needed anywhere here.
  */
 export default function NewConnectionModal({ open, onClose }: NewConnectionModalProps) {
   const { t } = useTranslation()
@@ -41,14 +41,11 @@ export default function NewConnectionModal({ open, onClose }: NewConnectionModal
   const beginSession = useAppStore((s) => s.beginSession)
   const beginSavedSession = useAppStore((s) => s.beginSavedSession)
 
-  const context = useSessionStore((s) => s.context)
-
   const savedConnections = useSavedConnectionsStore((s) => s.connections)
   const refreshSaved = useSavedConnectionsStore((s) => s.refresh)
   const saveConnection = useSavedConnectionsStore((s) => s.save)
 
   const [messageApi, messageHolder] = message.useMessage()
-  const [modalApi, modalHolder] = Modal.useModal()
   const [credsOpen, setCredsOpen] = useState(false)
 
   // Reload the saved-connection list every time the modal opens.
@@ -77,44 +74,24 @@ export default function NewConnectionModal({ open, onClose }: NewConnectionModal
     lastScanError.current = scanError
   }, [open, scanError, messageApi, t])
 
-  /**
-   * Runs fn immediately, or — while a session is live — after the user
-   * confirms replacing it. Cancel is a no-op: the modal stays put and the
-   * current session is untouched.
-   */
-  const confirmSwitch = (fn: () => void): void => {
-    if (!context) {
-      fn()
-      return
-    }
-    void modalApi.confirm({
-      title: t('session.switchNewConfirm', { target: context.target }),
-      okText: t('credentials.submit'),
-      cancelText: t('saved.cancel'),
-      onOk: fn
-    })
-  }
-
-  /** Direct connect from a saved entry (same logic as the session sider). */
+  /** Direct connect from a saved entry: opens a new session (same logic as the session sider). */
   const connectSaved = (id: string): void => {
-    confirmSwitch(() => {
-      void (async () => {
-        try {
-          const conn = await window.anyremote.connections.get(id)
-          if (!conn) {
-            await refreshSaved() // stale entry (deleted elsewhere): reload the list
-            return
-          }
-          beginSavedSession(
-            { id: conn.id, host: conn.host, protocols: conn.protocols },
-            savedToCredentials(conn)
-          )
-          onClose()
-        } catch (err) {
-          void messageApi.error(`${t('saved.loadFailed')}: ${ipcErrorMessage(err)}`)
+    void (async () => {
+      try {
+        const conn = await window.anyremote.connections.get(id)
+        if (!conn) {
+          await refreshSaved() // stale entry (deleted elsewhere): reload the list
+          return
         }
-      })()
-    })
+        beginSavedSession(
+          { id: conn.id, host: conn.host, protocols: conn.protocols },
+          savedToCredentials(conn)
+        )
+        onClose()
+      } catch (err) {
+        void messageApi.error(`${t('saved.loadFailed')}: ${ipcErrorMessage(err)}`)
+      }
+    })()
   }
 
   return (
@@ -127,7 +104,6 @@ export default function NewConnectionModal({ open, onClose }: NewConnectionModal
       destroyOnHidden
     >
       {messageHolder}
-      {modalHolder}
       <Space direction="vertical" size={12} style={{ width: '100%' }}>
         <Space.Compact style={{ width: '100%' }}>
           <Input
@@ -202,7 +178,7 @@ export default function NewConnectionModal({ open, onClose }: NewConnectionModal
         )}
 
         {scanReport && (
-          <Space size={16} style={{ width: '100%', justifyContent: 'flex-end' }}>
+          <Space size={16} className="newconn-footer" style={{ width: '100%', justifyContent: 'flex-end' }}>
             <Text type="secondary">{t('scan.selectedCount', { count: selected.length })}</Text>
             <Button
               type="primary"
@@ -220,36 +196,32 @@ export default function NewConnectionModal({ open, onClose }: NewConnectionModal
         target={targetAddress.trim()}
         onCancel={() => setCredsOpen(false)}
         onSubmit={(credentials, saveRequest) => {
-          // A2: replacing the live session needs confirmation first; on
-          // cancel the credentials modal stays open and nothing changes.
-          confirmSwitch(() => {
-            setCredsOpen(false)
-            // Save first (failures toast but never block connecting), then
-            // go. B7: saveRequest.existingId updates the same-host+username
-            // entry instead of creating a duplicate.
-            void (async () => {
-              if (saveRequest) {
-                try {
-                  await saveConnection({
-                    ...(saveRequest.existingId ? { id: saveRequest.existingId } : {}),
-                    name: saveRequest.name,
-                    host: targetAddress.trim(),
-                    protocols: [...selected],
-                    username: credentials.username,
-                    secret: credentials.password
-                      ? { kind: 'password', data: credentials.password }
-                      : credentials.privateKey
-                        ? { kind: 'privateKeyPath', data: credentials.privateKey }
-                        : undefined
-                  })
-                } catch (err) {
-                  void messageApi.error(`${t('saved.saveFailed')}: ${ipcErrorMessage(err)}`)
-                }
+          setCredsOpen(false)
+          // Save first (failures toast but never block connecting), then
+          // go. B7: saveRequest.existingId updates the same-host+username
+          // entry instead of creating a duplicate.
+          void (async () => {
+            if (saveRequest) {
+              try {
+                await saveConnection({
+                  ...(saveRequest.existingId ? { id: saveRequest.existingId } : {}),
+                  name: saveRequest.name,
+                  host: targetAddress.trim(),
+                  protocols: [...selected],
+                  username: credentials.username,
+                  secret: credentials.password
+                    ? { kind: 'password', data: credentials.password }
+                    : credentials.privateKey
+                      ? { kind: 'privateKeyPath', data: credentials.privateKey }
+                      : undefined
+                })
+              } catch (err) {
+                void messageApi.error(`${t('saved.saveFailed')}: ${ipcErrorMessage(err)}`)
               }
-              beginSession(credentials)
-            })()
-            onClose()
-          })
+            }
+            beginSession(credentials)
+          })()
+          onClose()
         }}
       />
     </Modal>

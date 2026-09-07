@@ -36,8 +36,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { FileEntry } from '../../shared/ssh'
 import { ipcErrorCode, ipcErrorMessage } from '../../shared/ipc'
-import { useSessionStore } from '../store/session'
-import { useFilesStore } from '../store/files'
+import { useSessionScope } from '../store/session'
+import { getFilesStore, useFilesStore } from '../store/files'
 import './files.css'
 
 const { Text } = Typography
@@ -162,16 +162,19 @@ function EntryIcon({ entry }: { entry: FileEntry }) {
 
 export default function FileManagerPanel() {
   const { t } = useTranslation()
-  const context = useSessionStore((s) => s.context)
+  const context = useSessionScope()
+  const scopeId = context?.id ?? ''
+  /** This session's files store (per-session registry, keyed by scopeId). */
+  const filesStore = getFilesStore(scopeId)
 
-  const localPath = useFilesStore((s) => s.localPath)
-  const localEntries = useFilesStore((s) => s.localEntries)
-  const localLoading = useFilesStore((s) => s.localLoading)
-  const remotePath = useFilesStore((s) => s.remotePath)
-  const remoteEntries = useFilesStore((s) => s.remoteEntries)
-  const remoteLoading = useFilesStore((s) => s.remoteLoading)
-  const selectedRemote = useFilesStore((s) => s.selectedRemote)
-  const transfers = useFilesStore((s) => s.transfers)
+  const localPath = useFilesStore(scopeId, (s) => s.localPath)
+  const localEntries = useFilesStore(scopeId, (s) => s.localEntries)
+  const localLoading = useFilesStore(scopeId, (s) => s.localLoading)
+  const remotePath = useFilesStore(scopeId, (s) => s.remotePath)
+  const remoteEntries = useFilesStore(scopeId, (s) => s.remoteEntries)
+  const remoteLoading = useFilesStore(scopeId, (s) => s.remoteLoading)
+  const selectedRemote = useFilesStore(scopeId, (s) => s.selectedRemote)
+  const transfers = useFilesStore(scopeId, (s) => s.transfers)
 
   const [phase, setPhase] = useState<Phase>(context ? 'connecting' : 'no-context')
   const [errorText, setErrorText] = useState('')
@@ -216,16 +219,16 @@ export default function FileManagerPanel() {
   const loadLocal = useCallback(
     async (path: string) => {
       const req = ++localReqRef.current
-      useFilesStore.getState().setLocalLoading(true)
+      filesStore.getState().setLocalLoading(true)
       try {
         const entries = await window.anyremote.localFs.list(path)
         if (req === localReqRef.current) {
-          useFilesStore.getState().setLocal(path, sortEntries(entries))
+          filesStore.getState().setLocal(path, sortEntries(entries))
         }
       } catch (err) {
         if (req === localReqRef.current) messageApi.error(errorMessage(err))
       } finally {
-        if (req === localReqRef.current) useFilesStore.getState().setLocalLoading(false)
+        if (req === localReqRef.current) filesStore.getState().setLocalLoading(false)
       }
     },
     [messageApi]
@@ -236,16 +239,16 @@ export default function FileManagerPanel() {
       const sid = sessionIdRef.current
       if (sid === null) return
       const req = ++remoteReqRef.current
-      useFilesStore.getState().setRemoteLoading(true)
+      filesStore.getState().setRemoteLoading(true)
       try {
         const entries = await window.anyremote.sftp.list(sid, path)
         if (req === remoteReqRef.current) {
-          useFilesStore.getState().setRemote(path, sortEntries(entries))
+          filesStore.getState().setRemote(path, sortEntries(entries))
         }
       } catch (err) {
         if (req === remoteReqRef.current) messageApi.error(errorMessage(err))
       } finally {
-        if (req === remoteReqRef.current) useFilesStore.getState().setRemoteLoading(false)
+        if (req === remoteReqRef.current) filesStore.getState().setRemoteLoading(false)
       }
     },
     [messageApi]
@@ -262,7 +265,7 @@ export default function FileManagerPanel() {
     let cancelled = false
     let unsubProgress: (() => void) | null = null
     setPhase('connecting')
-    useFilesStore.getState().reset()
+    filesStore.getState().reset()
 
     const { username, password, privateKey, passphrase } = context.credentials
     window.anyremote.ssh
@@ -275,7 +278,7 @@ export default function FileManagerPanel() {
         sessionIdRef.current = sid
         unsubProgress = window.anyremote.sftp.onProgress(sid, (progress) => {
           const id = activeTransferRef.current
-          if (id !== null) useFilesStore.getState().setTransferProgress(id, progress.percent)
+          if (id !== null) filesStore.getState().setTransferProgress(id, progress.percent)
         })
         const [localHome, remoteHome] = await Promise.all([
           window.anyremote.localFs.homeDir(),
@@ -297,7 +300,7 @@ export default function FileManagerPanel() {
       const sid = sessionIdRef.current
       sessionIdRef.current = null
       if (sid !== null) void window.anyremote.ssh.close(sid)
-      useFilesStore.getState().reset()
+      filesStore.getState().reset()
     }
   }, [context, retryCount, connectErrorText, loadLocal, loadRemote])
 
@@ -310,13 +313,13 @@ export default function FileManagerPanel() {
   const runTransfer = useCallback(
     (fileName: string, direction: 'upload' | 'download', op: () => Promise<void>) =>
       async () => {
-        const id = useFilesStore.getState().addTransfer(fileName, direction)
+        const id = filesStore.getState().addTransfer(fileName, direction)
         activeTransferRef.current = id
         try {
           await op()
-          useFilesStore.getState().finishTransfer(id, 'done')
+          filesStore.getState().finishTransfer(id, 'done')
         } catch (err) {
-          useFilesStore.getState().finishTransfer(id, 'error')
+          filesStore.getState().finishTransfer(id, 'error')
           messageApi.error(errorMessage(err))
         } finally {
           activeTransferRef.current = null
@@ -326,7 +329,7 @@ export default function FileManagerPanel() {
   )
 
   const refreshRemote = useCallback(() => {
-    const dir = useFilesStore.getState().remotePath
+    const dir = filesStore.getState().remotePath
     if (dir !== null) void loadRemote(dir)
   }, [loadRemote])
 
@@ -334,7 +337,7 @@ export default function FileManagerPanel() {
 
   const doUpload = useCallback(async () => {
     const sid = sessionIdRef.current
-    const dir = useFilesStore.getState().remotePath
+    const dir = filesStore.getState().remotePath
     if (sid === null || dir === null) return
     const paths = await window.anyremote.dialog.pickFiles()
     if (paths.length === 0) return
@@ -347,7 +350,7 @@ export default function FileManagerPanel() {
     }
     // Refresh the listing once the batch has drained.
     enqueueTransfer(async () => {
-      const cur = useFilesStore.getState().remotePath
+      const cur = filesStore.getState().remotePath
       if (cur !== null) await loadRemote(cur)
     })
   }, [enqueueTransfer, runTransfer, loadRemote])
@@ -355,7 +358,7 @@ export default function FileManagerPanel() {
   const doDownload = useCallback(async () => {
     const sid = sessionIdRef.current
     const { remotePath: dir, selectedRemote: sel, remoteEntries: entries } =
-      useFilesStore.getState()
+      filesStore.getState()
     if (sid === null || dir === null || sel.length !== 1) return
     const entry = entries.find((e) => e.name === sel[0])
     if (!entry || entry.type === 'directory') return
@@ -372,7 +375,7 @@ export default function FileManagerPanel() {
   const doMkdir = useCallback(async () => {
     const name = mkdirName.trim()
     const sid = sessionIdRef.current
-    const dir = useFilesStore.getState().remotePath
+    const dir = filesStore.getState().remotePath
     if (sid === null || dir === null || name === '') return
     try {
       await window.anyremote.sftp.mkdir(sid, joinPath(dir, name))
@@ -387,7 +390,7 @@ export default function FileManagerPanel() {
   const doRename = useCallback(async () => {
     const name = renameValue.trim()
     const sid = sessionIdRef.current
-    const { remotePath: dir, selectedRemote: sel } = useFilesStore.getState()
+    const { remotePath: dir, selectedRemote: sel } = filesStore.getState()
     if (sid === null || dir === null || sel.length !== 1 || name === '') return
     try {
       await window.anyremote.sftp.rename(sid, joinPath(dir, sel[0]), joinPath(dir, name))
@@ -401,7 +404,7 @@ export default function FileManagerPanel() {
   const doDelete = useCallback(async () => {
     const sid = sessionIdRef.current
     const { remotePath: dir, selectedRemote: sel, remoteEntries: entries } =
-      useFilesStore.getState()
+      filesStore.getState()
     if (sid === null || dir === null || sel.length === 0) return
     for (const entry of entries.filter((e) => sel.includes(e.name))) {
       const p = joinPath(dir, entry.name)
@@ -638,7 +641,7 @@ export default function FileManagerPanel() {
               locale={{ emptyText: t('files.empty', { defaultValue: '空目录' }) }}
               rowSelection={{
                 selectedRowKeys: selectedRemote,
-                onChange: (keys) => useFilesStore.getState().setSelectedRemote(keys.map(String))
+                onChange: (keys) => filesStore.getState().setSelectedRemote(keys.map(String))
               }}
               onRow={(entry) => ({
                 onDoubleClick: () => {
@@ -672,7 +675,7 @@ export default function FileManagerPanel() {
                   type="text"
                   size="small"
                   icon={<CloseOutlined />}
-                  onClick={() => useFilesStore.getState().removeTransfer(tr.id)}
+                  onClick={() => filesStore.getState().removeTransfer(tr.id)}
                 />
               )}
             </div>

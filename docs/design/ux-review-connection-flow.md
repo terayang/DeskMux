@@ -1,5 +1,7 @@
 # AnyRemote 连接管理交互评审与修改方案
 
+> **2026-09 更新（取代部分结论）**：应用首页已从"扫描向导页"改为"工作台页"——启动直进 SessionPage，无会话时主区为欢迎面板（快速连接输入 `#target-address-input` + 已保存设备列表，保留 B1/B5/B6 语义），扫描流程统一收口到 `NewConnectionModal`；`ScanPage` 与 store 的 `page` 字段已删除，⌘K 始终打开新建连接模态，断开/关完标签停留在工作台空态。下文 A4"按 page 分发"、B 系列"首页"等表述以本次更新为准。
+
 > 评审对象：首页扫描 → 凭据 → 会话工作区的连接管理交互（v0.0.1，2026-07-27）
 > 评审依据：src/renderer/pages/{ScanPage,SessionPage}.tsx、src/renderer/store/{index,session,savedConnections}.ts、src/renderer/components/CredentialsModal.tsx、MISSION.md、docs/ARCHITECTURE.md §8
 > 结论先行：两个用户反馈均成立。根因是"扫描页被设计成发起连接的唯一场所"且"输入框与已保存列表零联动"。v1 用两个常驻入口 + 输入匹配提示条解决，不动单会话模型；v2 再演进到多目标并行。

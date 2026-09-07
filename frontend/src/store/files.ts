@@ -1,13 +1,17 @@
 /**
- * State for the file manager panel (stage 4b): the local (left) and remote
+ * State for one file manager panel (stage 4b): the local (left) and remote
  * (right) directory listings plus the bottom transfer queue. The panel owns
  * the SSH session lifecycle itself; this store holds only view state so the
  * listing survives React re-renders and the transfer queue can be fed by
  * sftp.onProgress events (which carry no file name — transfers run serially,
  * so progress always belongs to the one active item).
+ *
+ * Multi-session model (F6): one store instance per session (keyed by
+ * SessionContext.id), created lazily by the panel and dropped when the
+ * session closes (useAppStore.closeSession).
  */
 
-import { create } from 'zustand'
+import { create, useStore } from 'zustand'
 import type { FileEntry } from '../../shared/ssh'
 
 export type TransferDirection = 'upload' | 'download'
@@ -72,48 +76,72 @@ const INITIAL_STATE = {
   | 'transfers'
 >
 
-export const useFilesStore = create<FilesState>((set, get) => ({
-  ...INITIAL_STATE,
+export type FilesStore = ReturnType<typeof createFilesStore>
 
-  setLocal: (path, entries) => set({ localPath: path, localEntries: entries }),
+function createFilesStore() {
+  return create<FilesState>((set, get) => ({
+    ...INITIAL_STATE,
 
-  setLocalLoading: (loading) => set({ localLoading: loading }),
+    setLocal: (path, entries) => set({ localPath: path, localEntries: entries }),
 
-  // Navigating invalidates the previous selection.
-  setRemote: (path, entries) =>
-    set({ remotePath: path, remoteEntries: entries, selectedRemote: [] }),
+    setLocalLoading: (loading) => set({ localLoading: loading }),
 
-  setRemoteLoading: (loading) => set({ remoteLoading: loading }),
+    // Navigating invalidates the previous selection.
+    setRemote: (path, entries) =>
+      set({ remotePath: path, remoteEntries: entries, selectedRemote: [] }),
 
-  setSelectedRemote: (names) => set({ selectedRemote: names }),
+    setRemoteLoading: (loading) => set({ remoteLoading: loading }),
 
-  addTransfer: (fileName, direction) => {
-    const id = ++transferSeq
-    set((s) => ({
-      transfers: [...s.transfers, { id, fileName, direction, percent: 0, status: 'active' }]
-    }))
-    return id
-  },
+    setSelectedRemote: (names) => set({ selectedRemote: names }),
 
-  setTransferProgress: (id, percent) =>
-    set((s) => ({
-      transfers: s.transfers.map((tr) => (tr.id === id ? { ...tr, percent } : tr))
-    })),
+    addTransfer: (fileName, direction) => {
+      const id = ++transferSeq
+      set((s) => ({
+        transfers: [...s.transfers, { id, fileName, direction, percent: 0, status: 'active' }]
+      }))
+      return id
+    },
 
-  finishTransfer: (id, status) => {
-    set((s) => ({
-      transfers: s.transfers.map((tr) =>
-        tr.id === id ? { ...tr, status, percent: status === 'done' ? 100 : tr.percent } : tr
-      )
-    }))
-    if (status === 'done') {
-      // Completed items linger briefly, then fade out of the queue.
-      setTimeout(() => get().removeTransfer(id), DONE_FADE_MS)
-    }
-  },
+    setTransferProgress: (id, percent) =>
+      set((s) => ({
+        transfers: s.transfers.map((tr) => (tr.id === id ? { ...tr, percent } : tr))
+      })),
 
-  removeTransfer: (id) =>
-    set((s) => ({ transfers: s.transfers.filter((tr) => tr.id !== id) })),
+    finishTransfer: (id, status) => {
+      set((s) => ({
+        transfers: s.transfers.map((tr) =>
+          tr.id === id ? { ...tr, status, percent: status === 'done' ? 100 : tr.percent } : tr
+        )
+      }))
+      if (status === 'done') {
+        // Completed items linger briefly, then fade out of the queue.
+        setTimeout(() => get().removeTransfer(id), DONE_FADE_MS)
+      }
+    },
 
-  reset: () => set({ ...INITIAL_STATE })
-}))
+    removeTransfer: (id) =>
+      set((s) => ({ transfers: s.transfers.filter((tr) => tr.id !== id) })),
+
+    reset: () => set({ ...INITIAL_STATE })
+  }))
+}
+
+const registry = new Map<string, FilesStore>()
+
+export function getFilesStore(sessionId: string): FilesStore {
+  let store = registry.get(sessionId)
+  if (store === undefined) {
+    store = createFilesStore()
+    registry.set(sessionId, store)
+  }
+  return store
+}
+
+export function dropFilesStore(sessionId: string): void {
+  registry.delete(sessionId)
+}
+
+/** Hook shorthand: subscribes the component to this session's files store. */
+export function useFilesStore<T>(sessionId: string, selector: (s: FilesState) => T): T {
+  return useStore(getFilesStore(sessionId), selector)
+}

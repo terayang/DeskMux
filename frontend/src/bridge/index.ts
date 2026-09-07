@@ -115,8 +115,9 @@ export interface AnyRemoteApi {
 /**
  * In-memory saved-connections stand-in feeding ONLY the dev mock (mock.ts);
  * the Wails path calls the Go store (internal/store) instead. Save semantics
- * mirror the retired Electron store: an omitted secret drops any previous
- * one, and delete of an unknown id is a no-op.
+ * mirror the Go store: an omitted secret preserves the previous one, an
+ * explicitly empty secret (empty data) clears it, and delete of an unknown id
+ * is a no-op.
  */
 function createMockConnections(): AnyRemoteApi['connections'] {
   const entries = new Map<string, SavedConnection>()
@@ -128,13 +129,16 @@ function createMockConnections(): AnyRemoteApi['connections'] {
     list: async () => [...entries.values()].map(summaryOf),
     get: async (id) => entries.get(id) ?? null,
     save: async (input) => {
+      const previous = input.id !== undefined ? entries.get(input.id) : undefined
+      let secret = input.secret ?? previous?.secret
+      if (secret !== undefined && secret.data === '') secret = undefined
       const conn: SavedConnection = {
         id: input.id ?? crypto.randomUUID(),
         name: input.name,
         host: input.host,
         protocols: [...input.protocols],
         username: input.username,
-        ...(input.secret ? { secret: { ...input.secret } } : {})
+        ...(secret !== undefined ? { secret: { ...secret } } : {})
       }
       entries.set(conn.id, conn)
       return summaryOf(conn)

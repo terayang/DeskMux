@@ -1,7 +1,53 @@
-/* Global styles for the AnyRemote renderer (dark, compact, mono accents). */
+/* Global styles for the AnyRemote renderer.
+   Direction A "modern refined dark" token layer — the single source of truth
+   is docs/design/direction-a-tokens.md; keep the two in sync when restyling. */
 
 :root {
   color-scheme: dark;
+
+  /* Layered dark greys (never pure black) */
+  --ar-bg-base: #0e1116;
+  --ar-bg-panel: #151a21;
+  --ar-bg-elevated: #1c222b;
+  --ar-bg-active: #223142;
+  --ar-bg-inset: #0b0e13;
+
+  /* Hairline borders */
+  --ar-border: rgba(255, 255, 255, 0.08);
+  --ar-border-subtle: rgba(255, 255, 255, 0.05);
+  --ar-border-strong: rgba(255, 255, 255, 0.14);
+
+  /* Text */
+  --ar-text: #e2e8f0;
+  --ar-text-secondary: #97a3b4;
+  --ar-text-tertiary: #5e6b7d;
+
+  /* Brand + functional colors */
+  --ar-accent: #5b9bff;
+  --ar-accent-hover: #74acff;
+  --ar-success: #4cc38a;
+  --ar-danger: #e56363;
+
+  /* Protocol identity colors (information encoding, not decoration) */
+  --ar-proto-ssh: #4cc38a;
+  --ar-proto-vnc: #8b7cf6;
+  --ar-proto-other: #8a95a5;
+
+  /* Type stacks */
+  --ar-font-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
+    sans-serif;
+  --ar-font-mono:
+    ui-monospace, 'JetBrains Mono', 'SF Mono', SFMono-Regular, Menlo, Consolas,
+    monospace;
+
+  /* Radius ladder: tag 4 / control 6 / card 10 */
+  --ar-radius-tag: 4px;
+  --ar-radius-control: 6px;
+  --ar-radius-card: 10px;
+
+  --ar-shadow-raised: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --ar-motion: 150ms ease;
 }
 
 html,
@@ -12,44 +58,140 @@ body,
 
 body {
   margin: 0;
-  background: #141414;
+  background: var(--ar-bg-base);
+  font-family: var(--ar-font-sans);
 }
 
 .mono {
-  font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, SFMono-Regular, Menlo,
-    Consolas, monospace;
+  font-family: var(--ar-font-mono);
 }
 
-/* ---------- App shell (slim header with the language switch) ---------- */
-
-.app-shell {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+/* Keyboard hint chip (⌘K / ⏎) used in the welcome hero hint. */
+.kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  border: 1px solid var(--ar-border);
+  border-radius: var(--ar-radius-tag);
+  background: var(--ar-bg-elevated);
+  color: var(--ar-text-secondary);
+  font-family: var(--ar-font-mono);
+  font-size: 11px;
+  line-height: 1.4;
+  vertical-align: 1px;
 }
 
-.app-header {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 6px 16px 4px;
-}
+/* ---------- Welcome panel (sessions stage empty state) ---------- */
 
-.app-body {
-  flex: 1;
-  min-height: 0;
-}
-
-/* ---------- Scan page ---------- */
-
-.scan-page {
+.welcome-panel {
   min-height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 24px 88px; /* room for the fixed footer bar */
+  justify-content: center;
+  /* Optical center at ~42% of the viewport: centering plus extra bottom
+     padding lifts the whole block (padding, not transform, so overflowing
+     device lists still scroll correctly). */
+  padding: 0 24px max(40px, 16vh);
+  overflow-y: auto;
 }
+
+/* One central axis carries everything; the hero input is the visual anchor. */
+.welcome-axis {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome-brand {
+  text-align: center;
+}
+
+.welcome-brand-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ar-text);
+}
+
+.welcome-brand-tagline {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--ar-text-tertiary);
+}
+
+/* Hero quick-connect: oversized input + scan button, with a focus ring. */
+.quick-connect {
+  display: flex;
+  margin-top: 32px;
+}
+
+.quick-connect .ant-input-affix-wrapper,
+.quick-connect .ant-input {
+  background: var(--ar-bg-elevated);
+}
+
+.quick-connect .ant-input-lg {
+  height: 46px;
+  font-size: 15px;
+}
+
+.quick-connect .ant-btn-lg {
+  height: 48px;
+  padding-inline: 20px;
+}
+
+.quick-connect-hint {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--ar-text-tertiary);
+}
+
+.quick-connect-banner {
+  margin-top: 12px;
+}
+
+/* ---------- Protocol tags (devices view, palette hints) ---------- */
+.proto-tag {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: var(--ar-radius-tag);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--proto-color, var(--ar-proto-other));
+  background: rgba(138, 149, 165, 0.13);
+}
+
+.proto-tag[data-protocol='ssh'] {
+  --proto-color: var(--ar-proto-ssh);
+  background: rgba(76, 195, 138, 0.13);
+}
+
+.proto-tag[data-protocol='vnc'] {
+  --proto-color: #a495fb;
+  background: rgba(139, 124, 246, 0.15);
+}
+
+/* A saved identity with a live session: dimmed rows + "connected" badge;
+   clicking switches to that session instead of opening a duplicate. */
+.connected-badge {
+  flex: none;
+  padding: 0 5px;
+  border: 1px solid var(--ar-border);
+  border-radius: var(--ar-radius-tag);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--ar-text-secondary);
+  white-space: nowrap;
+}
+
+/* ---------- Protocol scan cards (new-connection modal) ---------- */
 
 .protocol-grid {
   width: 100%;
@@ -61,184 +203,663 @@ body {
 }
 
 .protocol-card {
-  background: #1f1f1f;
-  border: 1px solid #2c2c2c;
+  background: var(--ar-bg-panel);
+  border: 1px solid var(--ar-border);
+  border-radius: var(--ar-radius-card);
   transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease,
-    border-color 0.15s ease;
+    border-color var(--ar-motion),
+    box-shadow var(--ar-motion),
+    transform var(--ar-motion);
 }
 
 .protocol-card:hover {
-  transform: translateY(-2px);
-  border-color: #3d3d3d;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  transform: translateY(-1px);
+  border-color: var(--ar-border-strong);
+  box-shadow: var(--ar-shadow-raised);
 }
 
 .protocol-card-dim {
-  opacity: 0.72;
+  opacity: 0.6;
 }
 
-.scan-footer {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+/* ---------- Operator Console workbench: activity bar ---------- */
+
+.workbench {
+  height: 100%;
   display: flex;
+  background: var(--ar-bg-base);
+  color: var(--ar-text);
+}
+
+.activitybar {
+  width: 48px;
+  flex: none;
+  background: var(--ar-bg-panel);
+  border-right: 1px solid var(--ar-border-subtle);
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
-  gap: 16px;
-  padding: 12px 24px;
-  background: rgba(20, 20, 20, 0.92);
-  border-top: 1px solid #2c2c2c;
-  backdrop-filter: blur(6px);
-}
-
-/* ---------- Saved connections (scan page block) ---------- */
-
-.saved-connections {
-  width: 100%;
-  max-width: 640px;
-  margin-top: 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.saved-conn-list {
-  display: flex;
-  flex-direction: column;
+  padding: 8px 0;
   gap: 4px;
 }
 
-.saved-conn-item {
+.activitybar .grow {
+  flex: 1;
+}
+
+.abtn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--ar-radius-control);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: 1px solid transparent;
+  justify-content: center;
+  background: transparent;
+  color: var(--ar-text-tertiary);
+  font-size: 16px;
   cursor: pointer;
+  transition:
+    background var(--ar-motion),
+    color var(--ar-motion);
 }
 
-.saved-conn-item:hover {
-  background: #242424;
-  border-color: #2c2c2c;
+.abtn:hover {
+  background: var(--ar-bg-elevated);
+  color: var(--ar-text-secondary);
 }
 
-.saved-conn-info {
+.abtn.on,
+.abtn.on:hover {
+  background: var(--ar-bg-elevated);
+  color: var(--ar-text);
+}
+
+/* 2px brand-blue spine on the active view button. */
+.abtn.on::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--ar-accent);
+}
+
+.abtn .badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: var(--ar-accent);
+  color: #0b1220;
+  font-family: var(--ar-font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 14px;
+  text-align: center;
+}
+
+/* ---------- Workbench: rail (context list column) ---------- */
+
+.rail {
+  width: 240px;
+  flex: none;
+  background: var(--ar-bg-panel);
+  border-right: 1px solid var(--ar-border-subtle);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.rail-head {
+  padding: 14px 16px 10px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.rail-head h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.rail-head span {
+  font-size: 11px;
+  color: var(--ar-text-tertiary);
+}
+
+.rail-search {
+  margin: 0 12px 10px;
+  height: 28px;
+  border: 1px solid var(--ar-border-subtle);
+  border-radius: var(--ar-radius-control);
+  background: var(--ar-bg-base);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  color: var(--ar-text-tertiary);
+  font-size: 12px;
+}
+
+.rail-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--ar-text);
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.rail-search input::placeholder {
+  color: var(--ar-text-tertiary);
+}
+
+.rail-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 8px 8px;
+}
+
+.rail-group {
+  padding: 12px 8px 4px;
+  font-size: 11px;
+  color: var(--ar-text-tertiary);
+}
+
+.ritem {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: 36px;
+  padding: 7px 8px;
+  border-radius: var(--ar-radius-control);
+  cursor: pointer;
+  transition: background var(--ar-motion);
+}
+
+.ritem:hover {
+  background: var(--ar-bg-elevated);
+}
+
+.ritem.on,
+.ritem.on:hover {
+  background: var(--ar-bg-active);
+}
+
+/* A saved identity with a live session (sessions view): dimmed. */
+.ritem.live {
+  opacity: 0.55;
+}
+
+/* 3px protocol-colored spine — the row's identity mark. */
+.ritem .sig {
+  flex: none;
+  width: 3px;
+  align-self: stretch;
+  margin: 2px 0;
+  border-radius: 2px;
+  background: var(--ar-proto-other);
+}
+
+.ritem .lbl {
+  flex: 1;
   min-width: 0;
 }
 
-/* The delete icon appears only while hovering the entry. */
-.saved-conn-delete {
-  opacity: 0;
-  transition: opacity 0.12s ease;
+.ritem .lbl .n {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 500;
 }
 
-.saved-conn-item:hover .saved-conn-delete {
+.ritem .lbl .n .k {
+  flex: none;
+  font-weight: 400;
+  color: var(--ar-text-tertiary);
+}
+
+.ritem .lbl .n .nm {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ritem .lbl .s {
+  font-family: var(--ar-font-mono);
+  font-size: 11px;
+  color: var(--ar-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ritem .meta {
+  flex: none;
+  font-family: var(--ar-font-mono);
+  font-size: 11px;
+  color: var(--ar-text-tertiary);
+}
+
+/* Row close button appears only while hovering the item. */
+.ritem .x {
+  flex: none;
+  display: flex;
+  border: none;
+  border-radius: var(--ar-radius-tag);
+  padding: 2px;
+  background: transparent;
+  color: var(--ar-text-tertiary);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--ar-motion);
+}
+
+.ritem:hover .x,
+.ritem:focus-within .x {
   opacity: 1;
 }
 
-/* ---------- Session page ---------- */
-
-.session-sider {
-  background: #1a1a1a !important;
-  border-right: 1px solid #2c2c2c;
-  padding-top: 8px;
+.ritem .x:hover {
+  color: var(--ar-text);
 }
 
-/* Sider column layout: header + new-connection button on top, saved list
-   scrolls in the middle, disconnect button pinned to the bottom. */
-.session-sider .ant-layout-sider-children {
-  height: 100%;
+.rail-empty {
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--ar-text-tertiary);
+}
+
+.rail-foot {
+  flex: none;
+  padding: 10px 16px;
+  border-top: 1px solid var(--ar-border-subtle);
+  font-size: 11px;
+  color: var(--ar-text-tertiary);
+}
+
+/* ---------- Workbench: stage ---------- */
+
+.stage {
+  flex: 1;
+  min-width: 0;
   display: flex;
+  flex-direction: column;
+  background: var(--ar-bg-base);
+}
+
+.stage-head {
+  flex: none;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--ar-border-subtle);
+}
+
+.stage-head .dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.stage-head .crumb {
+  min-width: 0;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stage-head .crumb .k {
+  color: var(--ar-text-tertiary);
+}
+
+.stage-head .who {
+  font-family: var(--ar-font-mono);
+  font-size: 12px;
+  color: var(--ar-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stage-head .grow {
+  flex: 1;
+}
+
+.stage-sessions {
+  flex: 1;
+  min-height: 0;
   flex-direction: column;
 }
 
-.session-sider-newconn {
+/* 32px pill tab strip replacing antd editable-card tabs. */
+.tabstrip {
   flex: none;
-  padding: 0 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  margin-top: 8px;
+  padding: 0 12px;
 }
 
-.session-sider-footer {
-  flex: none;
-  padding: 8px;
-  border-top: 1px solid #2c2c2c;
+.tabpill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--ar-radius-control);
+  background: transparent;
+  color: var(--ar-text-tertiary);
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background var(--ar-motion),
+    color var(--ar-motion);
 }
 
-.session-sider-header {
+.tabpill:hover {
+  background: var(--ar-bg-elevated);
+  color: var(--ar-text-secondary);
+}
+
+.tabpill.on,
+.tabpill.on:hover {
+  background: var(--ar-bg-active);
+  color: var(--ar-text);
+}
+
+.tabpill .x {
+  display: flex;
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: var(--ar-text-tertiary);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.tabpill .x:hover {
+  color: var(--ar-text);
+}
+
+.session-panels {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 16px 12px;
+}
+
+.session-panel-slot {
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+/* ---------- Workbench: command palette (⌘K) ---------- */
+
+.palette-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  padding-top: 15vh;
+}
+
+.palette {
+  width: 560px;
+  max-width: calc(100vw - 48px);
+  height: fit-content;
+  max-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--ar-bg-elevated);
+  border: 1px solid var(--ar-border-strong);
+  border-radius: var(--ar-radius-card);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.palette-input {
+  flex: none;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--ar-border-subtle);
+}
+
+.palette-input input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--ar-text);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.palette-input input::placeholder {
+  color: var(--ar-text-tertiary);
+}
+
+.palette-list {
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.pitem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 8px 10px;
+  border-radius: var(--ar-radius-control);
+  cursor: pointer;
+}
+
+.pitem.on {
+  background: var(--ar-bg-active);
+}
+
+.pitem .dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.pitem .icon {
+  flex: none;
+  color: var(--ar-text-tertiary);
+}
+
+.pitem .lbl {
+  flex: 1;
+  min-width: 0;
+}
+
+.pitem .t {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pitem .t .k {
+  color: var(--ar-text-tertiary);
+}
+
+.pitem .s {
+  font-family: var(--ar-font-mono);
+  font-size: 11px;
+  color: var(--ar-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pitem .hint {
+  flex: none;
+  font-family: var(--ar-font-mono);
+  font-size: 11px;
+  color: var(--ar-text-tertiary);
+}
+
+/* ---------- Workbench: devices view (device fleet) ---------- */
+
+.devices-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px;
+  overflow-y: auto;
+}
+
+.devices-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.devices-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.devices-table {
+  border: 1px solid var(--ar-border-subtle);
+  border-radius: var(--ar-radius-card);
+  overflow: hidden;
+}
+
+.devices-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.2fr) minmax(160px, 1.4fr) minmax(90px, 0.7fr) auto;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 0 14px;
+  border-top: 1px solid var(--ar-border-subtle);
+  cursor: pointer;
+  transition: background var(--ar-motion);
+}
+
+.devices-row:first-child {
+  border-top: none;
+}
+
+.devices-row-head {
+  height: 32px;
+  cursor: default;
+  background: var(--ar-bg-panel);
+  font-size: 11px;
+  color: var(--ar-text-tertiary);
+}
+
+.devices-row:not(.devices-row-head):hover {
+  background: var(--ar-bg-elevated);
+}
+
+.devices-row.on,
+.devices-row.on:hover {
+  background: var(--ar-bg-active);
+}
+
+.devices-name {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 12px 12px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 500;
 }
 
-.saved-list {
+.devices-name .nm {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.devices-name .dot-live {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ar-success);
+  box-shadow: 0 0 6px rgba(76, 195, 138, 0.5);
+}
+
+.devices-addr {
+  font-size: 12px;
+  color: var(--ar-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.devices-protos {
   display: flex;
-  flex-direction: column;
   gap: 4px;
-  padding: 8px;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
+  min-width: 0;
+  overflow: hidden;
 }
 
-.saved-item {
+.devices-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.devices-empty {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  border: 1px solid transparent;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding-bottom: 10vh;
+  font-size: 13px;
+  color: var(--ar-text-secondary);
 }
 
-.saved-item:hover {
-  background: #242424;
-}
+/* ---------- Session pane (per-session keep-alive wrapper) ---------- */
 
-.saved-item-active {
-  background: #1c2b45;
-  border-color: #2f4d80;
-}
-
-.saved-item-active:hover {
-  background: #1c2b45;
-}
-
-/* Saved-connections list inside the new-connection modal: same row style as
-   the sider, height-capped with its own scroll. */
-.newconn-saved-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  max-height: 184px;
-  overflow-y: auto;
-  margin-top: 4px;
-}
-
-/* Session tabs stretch to fill the workspace height. */
-.session-tabs {
+/* One pane per live session; inactive panes are hidden with display:none
+   (inline style) so their terminals / desktops keep state and connections. */
+.session-pane {
   flex: 1;
   min-height: 0;
-  display: flex;
   flex-direction: column;
-}
-
-.session-tabs .ant-tabs-content-holder {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-}
-
-.session-tabs .ant-tabs-content,
-.session-tabs .ant-tabs-tabpane {
-  height: 100%;
 }
 
 /* ---------- Desktop panel ---------- */
@@ -249,14 +870,60 @@ body {
   height: 100%;
 }
 
+/* Grouped toolbar: zoom/cursor/display | view-only/send-keys/fullscreen,
+   with the desktop name and disconnect on the trailing edge. */
+.desktop-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbar-divider {
+  flex: none;
+  width: 1px;
+  height: 18px;
+  margin: 0 8px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.toolbar-desktop-name {
+  max-width: 240px;
+  margin-right: 8px;
+  font-size: 12px;
+  color: var(--ar-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Uniform 28px icon buttons in the toolbar. */
+.desktop-toolbar .ant-btn-sm {
+  height: 28px;
+}
+
+.desktop-toolbar .ant-btn-sm.ant-btn-icon-only {
+  width: 28px;
+}
+
 .desktop-viewport {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #0a0a0a;
-  border: 1px solid #2c2c2c;
-  border-radius: 6px;
+  background: var(--ar-bg-inset);
+  border: 1px solid var(--ar-border-subtle);
+  border-radius: var(--ar-radius-card);
 }
 
 /* ---------- Terminal panel ---------- */
@@ -264,9 +931,9 @@ body {
 .terminal-panel {
   height: 100%;
   overflow: auto;
-  background: #0d1117;
-  border: 1px solid #2c2c2c;
-  border-radius: 6px;
+  background: var(--ar-bg-inset);
+  border: 1px solid var(--ar-border-subtle);
+  border-radius: var(--ar-radius-card);
   padding: 12px 14px;
   font-size: 12.5px;
   line-height: 1.7;
@@ -279,7 +946,7 @@ body {
   height: 14px;
   margin-left: 2px;
   vertical-align: text-bottom;
-  background: #7ee787;
+  background: var(--ar-success);
   animation: terminal-blink 1.1s steps(1) infinite;
 }
 
@@ -315,9 +982,9 @@ body {
 .local-file-list {
   flex: 1;
   overflow: auto;
-  background: #1a1a1a;
-  border: 1px solid #2c2c2c;
-  border-radius: 6px;
+  background: var(--ar-bg-panel);
+  border: 1px solid var(--ar-border-subtle);
+  border-radius: var(--ar-radius-card);
   padding: 6px;
 }
 
@@ -327,13 +994,43 @@ body {
   justify-content: space-between;
   gap: 8px;
   padding: 6px 8px;
-  border-radius: 4px;
+  border-radius: var(--ar-radius-tag);
   font-size: 12.5px;
   cursor: default;
 }
 
 .local-file-item:hover {
-  background: #242424;
+  background: var(--ar-bg-elevated);
+}
+
+/* ---------- New-connection modal: saved list (out of scope, kept coherent) ---------- */
+
+/* Saved-connections list inside the new-connection modal: same row style as
+   the rail, height-capped with its own scroll. */
+.newconn-saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 184px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+.saved-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: var(--ar-radius-control);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition:
+    background var(--ar-motion),
+    border-color var(--ar-motion);
+}
+
+.saved-item:hover {
+  background: var(--ar-bg-elevated);
 }
 
 /* The antd <App> context wrapper renders a plain div that otherwise breaks
@@ -341,4 +1038,29 @@ body {
    content height — the "desktop viewport is tiny" bug). */
 .ant-app {
   height: 100%;
+}
+
+
+/* EditConnectionModal: live protocol probe hints under the checkboxes. */
+.edit-conn-proto-hints {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: -12px 0 16px;
+  padding-left: 2px;
+}
+
+.edit-conn-proto-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.proto-hint-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ar-success);
+  box-shadow: 0 0 6px rgba(76, 195, 138, 0.5);
 }

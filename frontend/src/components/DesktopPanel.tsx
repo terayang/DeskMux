@@ -1,15 +1,28 @@
-import { DisconnectOutlined, ReloadOutlined, SettingOutlined, WarningOutlined } from '@ant-design/icons'
-import { Button, Popover, Segmented, Select, Space, Spin, Tooltip, Typography } from 'antd'
-import { useEffect, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
-import { useSessionStore } from '../store/session'
 import {
+  DisconnectOutlined,
+  EyeOutlined,
+  FullscreenExitOutlined,
+  FullscreenOutlined,
+  KeyOutlined,
+  LockOutlined,
+  ReloadOutlined,
+  SettingOutlined,
+  WarningOutlined
+} from '@ant-design/icons'
+import { Button, Dropdown, Popover, Segmented, Select, Space, Spin, Tooltip, Typography } from 'antd'
+import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useSessionScope } from '../store/session'
+import {
+  VNC_KEY_COMBOS,
   attachVnc,
   detachVnc,
   retryVnc,
+  sendKeyCombo,
   useVncStore,
   userDisconnectVnc,
-  type VncErrorKind
+  type VncErrorKind,
+  type VncKeyComboName
 } from '../store/vnc'
 import './vnc.css'
 
@@ -19,38 +32,68 @@ const VNC_PORT = 5900
 
 export default function DesktopPanel() {
   const { t } = useTranslation()
-  const context = useSessionStore((s) => s.context)
-  const status = useVncStore((s) => s.status)
-  const errorKind = useVncStore((s) => s.errorKind)
-  const desktopName = useVncStore((s) => s.desktopName)
-  const scaleMode = useVncStore((s) => s.scaleMode)
-  const setScaleMode = useVncStore((s) => s.setScaleMode)
-  const cursorMode = useVncStore((s) => s.cursorMode)
-  const setCursorMode = useVncStore((s) => s.setCursorMode)
-  const encMode = useVncStore((s) => s.encMode)
-  const quality = useVncStore((s) => s.quality)
-  const compression = useVncStore((s) => s.compression)
-  const setEncMode = useVncStore((s) => s.setEncMode)
-  const setQuality = useVncStore((s) => s.setQuality)
-  const setCompression = useVncStore((s) => s.setCompression)
-  const colorDepth = useVncStore((s) => s.colorDepth)
-  const setColorDepth = useVncStore((s) => s.setColorDepth)
+  const context = useSessionScope()
+  const scopeId = context?.id ?? ''
+  const status = useVncStore(scopeId, (s) => s.status)
+  const errorKind = useVncStore(scopeId, (s) => s.errorKind)
+  const desktopName = useVncStore(scopeId, (s) => s.desktopName)
+  const scaleMode = useVncStore(scopeId, (s) => s.scaleMode)
+  const setScaleMode = useVncStore(scopeId, (s) => s.setScaleMode)
+  const cursorMode = useVncStore(scopeId, (s) => s.cursorMode)
+  const setCursorMode = useVncStore(scopeId, (s) => s.setCursorMode)
+  const encMode = useVncStore(scopeId, (s) => s.encMode)
+  const quality = useVncStore(scopeId, (s) => s.quality)
+  const compression = useVncStore(scopeId, (s) => s.compression)
+  const setEncMode = useVncStore(scopeId, (s) => s.setEncMode)
+  const setQuality = useVncStore(scopeId, (s) => s.setQuality)
+  const setCompression = useVncStore(scopeId, (s) => s.setCompression)
+  const colorDepth = useVncStore(scopeId, (s) => s.colorDepth)
+  const setColorDepth = useVncStore(scopeId, (s) => s.setColorDepth)
+  const viewOnly = useVncStore(scopeId, (s) => s.viewOnly)
+  const setViewOnly = useVncStore(scopeId, (s) => s.setViewOnly)
   const containerRef = useRef<HTMLDivElement>(null)
+  const viewportRef = useRef<HTMLDivElement>(null)
+
+  // Fullscreen support is feature-detected once on mount: the Wails webview
+  // may not implement the Fullscreen API, in which case the button degrades
+  // to disabled-with-tooltip instead of failing mid-click.
+  const [fullscreenSupported, setFullscreenSupported] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  useEffect(() => {
+    const viewport = viewportRef.current
+    setFullscreenSupported(
+      document.fullscreenEnabled && typeof viewport?.requestFullscreen === 'function'
+    )
+    const onFullscreenChange = (): void => {
+      setIsFullscreen(document.fullscreenElement === viewportRef.current)
+    }
+    document.addEventListener('fullscreenchange', onFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange)
+  }, [])
+
+  const toggleFullscreen = (): void => {
+    if (isFullscreen) {
+      void document.exitFullscreen().catch(() => {})
+    } else {
+      void viewportRef.current?.requestFullscreen().catch(() => {})
+    }
+  }
 
   // The mount lifecycle owns the connection: exactly one attach per mount,
-  // detach on unmount. attachVnc() tears down any previous live session, so
-  // StrictMode double-mounts and tab close/reopen cannot stack connections.
+  // detach on unmount. attachVnc() tears down this session's previous live
+  // connection, so StrictMode double-mounts and tab close/reopen cannot stack
+  // connections; other sessions' connections are untouched.
   useEffect(() => {
     const container = containerRef.current
     if (context === null || container === null) return
-    void attachVnc(container, {
+    void attachVnc(context.id, container, {
       host: context.target,
       port: VNC_PORT,
       username: context.credentials.username,
       password: context.credentials.password
     })
     return () => {
-      detachVnc()
+      detachVnc(context.id)
     }
   }, [context])
 
@@ -143,8 +186,8 @@ export default function DesktopPanel() {
 
   return (
     <div className="desktop-panel">
-      <Space style={{ width: '100%', justifyContent: 'space-between', marginBottom: 8 }}>
-        <Space size={12}>
+      <div className="desktop-toolbar">
+        <div className="toolbar-group">
           <Select
             size="small"
             value={scaleMode}
@@ -174,17 +217,67 @@ export default function DesktopPanel() {
           >
             <Button size="small" icon={<SettingOutlined />} />
           </Popover>
-          {desktopName !== '' && (
-            <Text className="mono" type="secondary" style={{ fontSize: 12 }}>
-              {desktopName}
-            </Text>
-          )}
-        </Space>
-        <Button size="small" danger icon={<DisconnectOutlined />} onClick={userDisconnectVnc}>
+        </div>
+        <span className="toolbar-divider" />
+        <div className="toolbar-group">
+          <Tooltip title={t('desktop.viewOnlyHint')} placement="bottom">
+            <Button
+              id="vnc-viewonly-toggle"
+              size="small"
+              type={viewOnly ? 'primary' : 'default'}
+              icon={viewOnly ? <LockOutlined /> : <EyeOutlined />}
+              aria-label={t('desktop.viewOnly')}
+              onClick={() => setViewOnly(!viewOnly)}
+            />
+          </Tooltip>
+          <Dropdown
+            trigger={['click']}
+            disabled={status !== 'connected'}
+            menu={{
+              items: [
+                { key: 'ctrlAltDel', label: t('desktop.sendCtrlAltDel') },
+                { key: 'altF4', label: t('desktop.sendAltF4') },
+                { key: 'super', label: t('desktop.sendSuper') }
+              ],
+              onClick: ({ key }) => void sendKeyCombo(scopeId, VNC_KEY_COMBOS[key as VncKeyComboName])
+            }}
+          >
+            <Button
+              id="vnc-sendkeys-button"
+              size="small"
+              icon={<KeyOutlined />}
+              aria-label={t('desktop.sendKeys')}
+            />
+          </Dropdown>
+          <Tooltip
+            title={
+              fullscreenSupported
+                ? t(isFullscreen ? 'desktop.fullscreenExit' : 'desktop.fullscreen')
+                : t('desktop.fullscreenUnsupported')
+            }
+            placement="bottom"
+          >
+            <Button
+              id="vnc-fullscreen-button"
+              size="small"
+              disabled={!fullscreenSupported}
+              icon={isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+              aria-label={t('desktop.fullscreen')}
+              onClick={toggleFullscreen}
+            />
+          </Tooltip>
+        </div>
+        <div className="toolbar-spacer" />
+        {desktopName !== '' && (
+          <span className="toolbar-desktop-name mono" title={desktopName}>
+            {desktopName}
+          </span>
+        )}
+        <Button size="small" danger icon={<DisconnectOutlined />} onClick={() => userDisconnectVnc(scopeId)}>
           {t('desktop.disconnect')}
         </Button>
-      </Space>
-      <div className="desktop-viewport vnc-viewport">
+      </div>
+      <div ref={viewportRef} className="desktop-viewport vnc-viewport">
         <div
           ref={containerRef}
           className={cursorMode === 'local' ? 'vnc-container local-cursor' : 'vnc-container'}
@@ -207,7 +300,7 @@ export default function DesktopPanel() {
         {context !== null && status === 'idle' && (
           <div className="vnc-overlay">
             <Text type="secondary">{t('vnc.disconnected', { defaultValue: '已断开连接' })}</Text>
-            <Button icon={<ReloadOutlined />} onClick={() => void retryVnc()}>
+            <Button icon={<ReloadOutlined />} onClick={() => void retryVnc(scopeId)}>
               {t('vnc.reconnect', { defaultValue: '重新连接' })}
             </Button>
           </div>
@@ -216,7 +309,7 @@ export default function DesktopPanel() {
           <div className="vnc-overlay" data-testid="vnc-error" data-error-kind={errorKind}>
             <WarningOutlined style={{ fontSize: 28, color: '#ff4d4f' }} />
             <Text>{errorMessages[errorKind]}</Text>
-            <Button type="primary" icon={<ReloadOutlined />} onClick={() => void retryVnc()}>
+            <Button type="primary" icon={<ReloadOutlined />} onClick={() => void retryVnc(scopeId)}>
               {t('vnc.retry', { defaultValue: '重试' })}
             </Button>
           </div>

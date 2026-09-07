@@ -1,7 +1,7 @@
 /**
  * Renderer-side view of the saved-connection store (F5): mirrors the
  * safeStorage-backed list owned by the main process (src/main/store.ts) for
- * the scan page's saved-connections block and the session page's sider.
+ * the workbench rail and the devices view.
  * Secrets never live here — list() returns summaries only; connecting fetches
  * the decrypted secret on demand via window.anyremote.connections.get.
  */

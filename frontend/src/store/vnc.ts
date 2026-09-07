@@ -14,13 +14,15 @@
  * IPC-level startBridge failures are classified from the IpcInvokeError code.
  * Both paths collapse into the same VncErrorKind set for the UI.
  *
- * Single-live-connection guard: one module-level session slot. React 18
- * StrictMode double-mounts and tab close/reopen both remount the panel;
- * every attach/detach disposes the previous session, and async continuations
- * plus event handlers verify they still own the slot before touching state.
+ * Multi-session model (F6): the former single module-level live slot is now
+ * a map keyed by SessionContext.id — every session owns an independent
+ * bridge + RFB instance + status store. React 18 StrictMode double-mounts
+ * and tab close/reopen both remount a panel; every attach/detach disposes
+ * that session's previous connection, and async continuations plus event
+ * handlers verify they still own their session's slot before touching state.
  */
 
-import { create } from 'zustand'
+import { create, useStore } from 'zustand'
 import { ipcErrorCode } from '../../shared/ipc'
 import type { VncBridgeHandle, VncStartBridgeParams } from '../../shared/ipc'
 import { VNC_BRIDGE_CLOSE_CODES } from '../../shared/vnc'
@@ -49,6 +51,20 @@ type RfbInstance = EventTarget & {
   viewOnly: boolean
   /** Starts a clean disconnection; a 'disconnect' event follows. */
   disconnect(): void
+  /** Sends local clipboard text to the server (RFB ClientCutText). */
+  clipboardPasteFrom(text: string): void
+  /**
+   * Sends a key event (noVNC 1.7 signature): X11 keysym + DOM code; down
+   * omitted sends press+release. A no-op unless connected and not viewOnly
+   * (noVNC checks both internally). With QEMU extended-key-event support the
+   * DOM code's XT scancode is sent; otherwise the keysym goes out as a plain
+   * RFB KeyEvent (keysym 0/falsy is dropped, so always pass one).
+   */
+  sendKey(keysym: number, code: string, down?: boolean): void
+  /** Moves keyboard focus to the noVNC canvas. */
+  focus(): void
+  /** Removes keyboard focus from the noVNC canvas. */
+  blur(): void
 }
 
 interface RfbConstructor {
@@ -73,7 +89,7 @@ export type VncErrorKind = 'auth' | 'connection' | 'protocol' | 'timeout' | 'unk
 
 export type VncStatus = 'idle' | 'connecting' | 'connected' | 'error'
 
-/** One live VNC session; the module-level slot below guarantees a single one. */
+/** One live VNC connection of one session (frontend session id keyed below). */
 interface LiveSession {
   rfb: RfbInstance | null
   bridgeId: string | null
@@ -81,12 +97,15 @@ interface LiveSession {
   disposed: boolean
   /** WebSocket close code observed by our own listener (null while open). */
   closeCode: number | null
+  /** Removes the document-level paste listener (null until attached). */
+  disposePaste: (() => void) | null
 }
 
-let live: LiveSession | null = null
+/** Live VNC connections, keyed by frontend session id (SessionContext.id). */
+const liveBySession = new Map<string, LiveSession>()
 
-/** Last attach arguments, kept so the error/idle overlays can reconnect. */
-let lastAttach: { container: HTMLElement; params: VncStartBridgeParams } | null = null
+/** Last attach arguments per session, kept so error/idle overlays can reconnect. */
+const lastAttachBySession = new Map<string, { container: HTMLElement; params: VncStartBridgeParams }>()
 
 /** Maps an IPC invoke failure (startBridge) onto a VncErrorKind. */
 function classifyIpcError(err: unknown): VncErrorKind {
@@ -129,6 +148,8 @@ function classifyCloseCode(code: number | null): VncErrorKind {
 function teardown(session: LiveSession, opts: { disconnectRfb: boolean }): void {
   if (session.disposed) return
   session.disposed = true
+  session.disposePaste?.()
+  session.disposePaste = null
   if (opts.disconnectRfb && session.rfb !== null) {
     try {
       session.rfb.disconnect()
@@ -167,6 +188,8 @@ interface VncState {
   desktopName: string
   scaleMode: VncScaleMode
   cursorMode: VncCursorMode
+  /** Watch-only: noVNC drops all keyboard/mouse/clipboard-out input. */
+  viewOnly: boolean
   encMode: VncEncMode
   /** Tight JPEG quality 0-9 (effective only with Tight/JPEG-capable servers). */
   quality: number
@@ -176,81 +199,132 @@ interface VncState {
   colorDepth: 16 | 24
   setScaleMode: (mode: VncScaleMode) => void
   setCursorMode: (mode: VncCursorMode) => void
+  setViewOnly: (viewOnly: boolean) => void
   setEncMode: (mode: VncEncMode) => void
   setQuality: (level: number) => void
   setCompression: (level: number) => void
   setColorDepth: (depth: 16 | 24) => void
 }
 
-export const useVncStore = create<VncState>((set) => ({
-  status: 'idle',
-  errorKind: null,
-  desktopName: '',
-  scaleMode: 'fit',
-  // Default to the local OS cursor: macOS Screen Sharing never sends RFB
-  // cursor shapes (noVNC #1430), so a noVNC-managed cursor is either
-  // invisible or falls back to the dot — the local cursor is always correct.
-  cursorMode: 'local',
-  encMode: 'auto',
-  quality: 6,
-  compression: 2,
-  colorDepth: 24,
-  setScaleMode: (mode) => {
-    set({ scaleMode: mode })
-    // Apply live when a session is up; attachVnc reads the store at creation.
-    if (live?.rfb) live.rfb.scaleViewport = mode === 'fit'
-  },
-  setCursorMode: (mode) => set({ cursorMode: mode }),
-  setEncMode: (mode) => {
-    set({ encMode: mode })
-    // The encoding preference is negotiated at (re)connect time via the
-    // bridge's SetEncodings rewrite, so re-attach to apply it.
-    if (live !== null) void retryVnc()
-  },
-  setQuality: (level) => {
-    set({ quality: level })
-    // noVNC re-sends SetEncodings on change when connected (live effect).
-    if (live?.rfb) live.rfb.qualityLevel = level
-  },
-  setCompression: (level) => {
-    set({ compression: level })
-    if (live?.rfb) live.rfb.compressionLevel = level
-  },
-  setColorDepth: (depth) => {
-    set({ colorDepth: depth })
-    // Pixel format is negotiated once during init, so re-attach to apply it.
-    if (live !== null) void retryVnc()
+export type VncStore = ReturnType<typeof createVncStore>
+
+/**
+ * One status/settings store per session. The setters close over the session
+ * id so a live toggle (view-only, quality, ...) only touches that session's
+ * RFB instance.
+ */
+function createVncStore(sessionId: string) {
+  const live = (): LiveSession | undefined => liveBySession.get(sessionId)
+  return create<VncState>((set) => ({
+    status: 'idle',
+    errorKind: null,
+    desktopName: '',
+    scaleMode: 'fit',
+    // Default to the local OS cursor: macOS Screen Sharing never sends RFB
+    // cursor shapes (noVNC #1430), so a noVNC-managed cursor is either
+    // invisible or falls back to the dot — the local cursor is always correct.
+    cursorMode: 'local',
+    viewOnly: false,
+    encMode: 'auto',
+    quality: 6,
+    compression: 2,
+    colorDepth: 24,
+    setScaleMode: (mode) => {
+      set({ scaleMode: mode })
+      // Apply live when a session is up; attachVnc reads the store at creation.
+      const rfb = live()?.rfb
+      if (rfb) rfb.scaleViewport = mode === 'fit'
+    },
+    setCursorMode: (mode) => set({ cursorMode: mode }),
+    setViewOnly: (viewOnly) => {
+      set({ viewOnly })
+      // Live toggle: noVNC's setter starts/stops input forwarding immediately.
+      const rfb = live()?.rfb
+      if (rfb) rfb.viewOnly = viewOnly
+    },
+    setEncMode: (mode) => {
+      set({ encMode: mode })
+      // The encoding preference is negotiated at (re)connect time via the
+      // bridge's SetEncodings rewrite, so re-attach to apply it.
+      if (live() !== undefined) void retryVnc(sessionId)
+    },
+    setQuality: (level) => {
+      set({ quality: level })
+      // noVNC re-sends SetEncodings on change when connected (live effect).
+      const rfb = live()?.rfb
+      if (rfb) rfb.qualityLevel = level
+    },
+    setCompression: (level) => {
+      set({ compression: level })
+      const rfb = live()?.rfb
+      if (rfb) rfb.compressionLevel = level
+    },
+    setColorDepth: (depth) => {
+      set({ colorDepth: depth })
+      // Pixel format is negotiated once during init, so re-attach to apply it.
+      if (live() !== undefined) void retryVnc(sessionId)
+    }
+  }))
+}
+
+const storeRegistry = new Map<string, VncStore>()
+
+export function getVncStore(sessionId: string): VncStore {
+  let store = storeRegistry.get(sessionId)
+  if (store === undefined) {
+    store = createVncStore(sessionId)
+    storeRegistry.set(sessionId, store)
   }
-}))
+  return store
+}
+
+export function dropVncStore(sessionId: string): void {
+  storeRegistry.delete(sessionId)
+}
+
+/** Hook shorthand: subscribes the component to this session's VNC store. */
+export function useVncStore<T>(sessionId: string, selector: (s: VncState) => T): T {
+  return useStore(getVncStore(sessionId), selector)
+}
 
 /**
  * Starts a VNC session into `container`: bridge -> WebSocket -> noVNC RFB.
- * Any previous live session is torn down first, so a remounted panel never
- * stacks connections. Resolves once the attempt is underway; outcomes
- * (connect/error) arrive through the store status.
+ * Any previous live connection of this session is torn down first, so a
+ * remounted panel never stacks connections; other sessions are untouched.
+ * Resolves once the attempt is underway; outcomes (connect/error) arrive
+ * through the session's store status.
  */
 export async function attachVnc(
+  sessionId: string,
   container: HTMLElement,
   params: VncStartBridgeParams
 ): Promise<void> {
-  if (live !== null) {
-    teardown(live, { disconnectRfb: true })
-    live = null
+  const store = getVncStore(sessionId)
+  const previous = liveBySession.get(sessionId)
+  if (previous !== undefined) {
+    teardown(previous, { disconnectRfb: true })
+    liveBySession.delete(sessionId)
   }
-  const session: LiveSession = { rfb: null, bridgeId: null, disposed: false, closeCode: null }
-  live = session
-  lastAttach = { container, params }
-  useVncStore.setState({ status: 'connecting', errorKind: null, desktopName: '' })
+  const session: LiveSession = {
+    rfb: null,
+    bridgeId: null,
+    disposed: false,
+    closeCode: null,
+    disposePaste: null
+  }
+  liveBySession.set(sessionId, session)
+  lastAttachBySession.set(sessionId, { container, params })
+  store.setState({ status: 'connecting', errorKind: null, desktopName: '' })
 
-  const ownsSlot = (): boolean => live === session && !session.disposed
+  const ownsSlot = (): boolean => liveBySession.get(sessionId) === session && !session.disposed
 
   let handle: VncBridgeHandle
   try {
-    const encodings = ENC_MODE_TO_ENCODINGS[useVncStore.getState().encMode]
+    const encodings = ENC_MODE_TO_ENCODINGS[store.getState().encMode]
     handle = await window.anyremote.vnc.startBridge({ ...params, encodings })
   } catch (err) {
     if (ownsSlot()) {
-      useVncStore.setState({ status: 'error', errorKind: classifyIpcError(err) })
+      store.setState({ status: 'error', errorKind: classifyIpcError(err) })
       teardown(session, { disconnectRfb: false })
     }
     return
@@ -273,8 +347,9 @@ export async function attachVnc(
 
   const rfb = new RFB(container, ws)
   session.rfb = rfb
-  const { scaleMode, quality, compression, colorDepth } = useVncStore.getState()
+  const { scaleMode, quality, compression, colorDepth, viewOnly } = store.getState()
   rfb.scaleViewport = scaleMode === 'fit'
+  rfb.viewOnly = viewOnly
   // Picked up by the initial SetEncodings (noVNC reads them in _sendEncodings).
   rfb.qualityLevel = quality
   rfb.compressionLevel = compression
@@ -284,15 +359,75 @@ export async function attachVnc(
   ;(rfb as unknown as { _fbDepth: number })._fbDepth = colorDepth
 
   rfb.addEventListener('connect', () => {
-    if (ownsSlot()) useVncStore.setState({ status: 'connected' })
+    if (ownsSlot()) store.setState({ status: 'connected' })
   })
   rfb.addEventListener('desktopname', (event) => {
     if (ownsSlot()) {
-      useVncStore.setState({
+      store.setState({
         desktopName: (event as CustomEvent<{ name: string }>).detail.name
       })
     }
   })
+  // Clipboard sync, both directions over plain RFB CutText (the bridge
+  // forwards those messages untouched): a remote copy lands on the local
+  // clipboard; a local paste inside the desktop goes to the remote side.
+  rfb.addEventListener('clipboard', (event) => {
+    if (!ownsSlot()) return
+    const { text } = (event as CustomEvent<{ text: string }>).detail
+    void navigator.clipboard?.writeText(text).catch(() => {
+      // Clipboard permission denied or insecure context: skip this sync.
+    })
+  })
+  // Local paste: browsers only fire 'paste' on editable elements, which the
+  // noVNC canvas is not — and noVNC preventDefault()s every canvas keydown
+  // (keyboard.js stopEvent), which would cancel the browser's paste command
+  // anyway. The workaround: capture the paste shortcut before the canvas
+  // sees it, stop it from propagating, and move focus to a hidden textarea
+  // so the browser's paste command lands there; the sink's paste event then
+  // carries the text and focus returns to the canvas.
+  //
+  // Multi-session: every live session registers its own document-level
+  // capture listener, and routing to the right session needs no explicit
+  // active-session check — the guard below (this session's container must
+  // hold the focus) can only match for the visible session, because hidden
+  // session panes are display:none and cannot contain the focused element.
+  const pasteSink = document.createElement('textarea')
+  pasteSink.style.cssText =
+    'position:fixed;top:-200px;left:0;width:1px;height:1px;opacity:0;pointer-events:none'
+  pasteSink.setAttribute('aria-hidden', 'true')
+  container.appendChild(pasteSink)
+  const onPasteKey = (event: KeyboardEvent): void => {
+    if (!ownsSlot()) return
+    if (event.key.toLowerCase() !== 'v' || !(event.ctrlKey || event.metaKey) || event.repeat) {
+      return
+    }
+    // Only hijack the shortcut while this session's desktop itself has focus;
+    // pasting into real inputs (toolbar select, credentials modal) or into
+    // another session's desktop stays untouched.
+    if (!container.contains(document.activeElement)) return
+    event.stopPropagation()
+    pasteSink.value = ''
+    pasteSink.focus()
+    // If no paste follows (empty clipboard, denied command) the keyboard
+    // focus must not be left stranded in the sink.
+    setTimeout(() => {
+      if (ownsSlot() && document.activeElement === pasteSink) rfb.focus()
+    }, 200)
+  }
+  const onSinkPaste = (event: ClipboardEvent): void => {
+    if (!ownsSlot()) return
+    const text = event.clipboardData?.getData('text/plain')
+    if (text) rfb.clipboardPasteFrom(text)
+    pasteSink.value = ''
+    rfb.focus()
+  }
+  document.addEventListener('keydown', onPasteKey, true)
+  pasteSink.addEventListener('paste', onSinkPaste)
+  session.disposePaste = () => {
+    document.removeEventListener('keydown', onPasteKey)
+    pasteSink.removeEventListener('paste', onSinkPaste)
+    pasteSink.remove()
+  }
   rfb.addEventListener('disconnect', (event) => {
     if (!ownsSlot()) return
     // Only non-intentional disconnects reach here: every local teardown goes
@@ -300,28 +435,84 @@ export async function attachVnc(
     const { clean } = (event as CustomEvent<{ clean: boolean }>).detail
     const kind = clean ? 'unknown' : classifyCloseCode(session.closeCode)
     teardown(session, { disconnectRfb: false })
-    useVncStore.setState({ status: 'error', errorKind: kind })
+    store.setState({ status: 'error', errorKind: kind })
   })
 }
 
-/** Unmount cleanup: tears down the live session and forgets retry context. */
-export function detachVnc(): void {
-  const session = live
-  live = null
-  lastAttach = null
-  if (session !== null) teardown(session, { disconnectRfb: true })
-  useVncStore.setState({ status: 'idle', errorKind: null, desktopName: '' })
+/** Unmount cleanup: tears down this session's connection and retry context. */
+export function detachVnc(sessionId: string): void {
+  const session = liveBySession.get(sessionId)
+  liveBySession.delete(sessionId)
+  lastAttachBySession.delete(sessionId)
+  if (session !== undefined) teardown(session, { disconnectRfb: true })
+  getVncStore(sessionId).setState({ status: 'idle', errorKind: null, desktopName: '' })
 }
 
-/** 断开 button: drops the session on purpose and returns the panel to idle. */
-export function userDisconnectVnc(): void {
-  const session = live
-  if (session !== null) teardown(session, { disconnectRfb: true })
-  useVncStore.setState({ status: 'idle', errorKind: null })
+/** 断开 button: drops the session's connection on purpose, back to idle. */
+export function userDisconnectVnc(sessionId: string): void {
+  const session = liveBySession.get(sessionId)
+  if (session !== undefined) teardown(session, { disconnectRfb: true })
+  getVncStore(sessionId).setState({ status: 'idle', errorKind: null })
 }
 
 /** Reconnects with the last attach arguments (the 重试/重新连接 buttons). */
-export async function retryVnc(): Promise<void> {
-  if (lastAttach === null) return
-  await attachVnc(lastAttach.container, lastAttach.params)
+export async function retryVnc(sessionId: string): Promise<void> {
+  const lastAttach = lastAttachBySession.get(sessionId)
+  if (lastAttach === undefined) return
+  await attachVnc(sessionId, lastAttach.container, lastAttach.params)
+}
+
+/** One physical key in a combo: X11 keysym + DOM KeyboardEvent.code. */
+export interface VncKeyStroke {
+  keysym: number
+  code: string
+}
+
+/**
+ * Special-key combos for the desktop toolbar dropdown (desktop.sendKeys).
+ * X11 keysyms from noVNC's KeyTable; DOM codes so the QEMU extended-key-event
+ * path (scancodes) also works when the server supports it. The labels stay
+ * neutral: Ctrl+Alt+Del is meaningless to macOS Screen Sharing but harmless.
+ */
+export const VNC_KEY_COMBOS = {
+  ctrlAltDel: [
+    { keysym: 0xffe3, code: 'ControlLeft' }, // XK_Control_L
+    { keysym: 0xffe9, code: 'AltLeft' }, // XK_Alt_L
+    { keysym: 0xffff, code: 'Delete' } // XK_Delete
+  ],
+  altF4: [
+    { keysym: 0xffe9, code: 'AltLeft' }, // XK_Alt_L
+    { keysym: 0xffc4, code: 'F4' } // XK_F4
+  ],
+  super: [{ keysym: 0xffeb, code: 'MetaLeft' }] // XK_Super_L
+} as const satisfies Record<string, readonly VncKeyStroke[]>
+
+export type VncKeyComboName = keyof typeof VNC_KEY_COMBOS
+
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+
+/**
+ * Sends a key combo through the given session's live connection: focuses the
+ * noVNC canvas, then presses every key down in order and releases them in
+ * reverse, ~40ms apart so slow servers do not coalesce the events. No-ops
+ * unless the session is connected; noVNC itself drops the events in
+ * view-only mode.
+ */
+export async function sendKeyCombo(
+  sessionId: string,
+  keys: readonly VncKeyStroke[]
+): Promise<void> {
+  const rfb = liveBySession.get(sessionId)?.rfb
+  if (rfb === undefined || rfb === null || getVncStore(sessionId).getState().status !== 'connected') {
+    return
+  }
+  rfb.focus()
+  for (const key of keys) {
+    rfb.sendKey(key.keysym, key.code, true)
+    await sleep(40)
+  }
+  for (let i = keys.length - 1; i >= 0; i--) {
+    rfb.sendKey(keys[i].keysym, keys[i].code, false)
+    await sleep(40)
+  }
 }

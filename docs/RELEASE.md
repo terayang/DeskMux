@@ -60,7 +60,7 @@ npm run dist:win   # Windows：wails build -platform windows/amd64 -nsis + 重�
 
 ### 发布流程
 
-推送版本 tag（`v*`）即触发 [release.yml](../.github/workflows/release.yml)：双平台构建后自动创建 GitHub Release 并挂载产物（见上文）。版本号在根 `package.json`、`frontend/package.json` 与 `wails.json` 的 `info.productVersion` 三处维护，发版前需同步递增。代码签名与公证为后续事项（macOS：`CSC_LINK` / 公证 secrets；Windows：Authenticode 证书）。
+推送版本 tag（`v*`）即触发 [release.yml](../.github/workflows/release.yml)：双平台构建后自动创建 GitHub Release 并挂载产物（见上文）。版本号在根 `package.json`、`frontend/package.json` 与 `wails.json` 的 `info.productVersion` 三处维护，由 `scripts/bump-version.mjs` 统一改写——本地执行 `npm run dist` / `npm run dist:win` 会先经 npm `pre` 钩子自动递增 patch 版本（保证每次打包产物文件名唯一、互不覆盖）；手动调整可用 `npm run version:bump -- [major|minor|patch]`。CI 的 tag 发布直接调 wails，不经 npm 脚本，发布版本号以 tag 前仓库内的版本为准。CHANGELOG 按正式版本分段，开发期递增的 patch 号不单独成段。代码签名与公证为后续事项（macOS：`CSC_LINK` / 公证 secrets；Windows：Authenticode 证书）。
 
 ---
 

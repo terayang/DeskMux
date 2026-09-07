@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/binary"
+	"flag"
 	"fmt"
 	"io"
 	"math"
@@ -21,11 +22,15 @@ const (
 )
 
 func main() {
-	ln, err := net.Listen("tcp", "127.0.0.1:5901")
+	// -addr lets several instances run side by side (multi-session VNC tests:
+	// one bridge serves only one client, so each session needs its own).
+	addr := flag.String("addr", "127.0.0.1:5901", "listen address of the mock RFB server")
+	flag.Parse()
+	ln, err := net.Listen("tcp", *addr)
 	if err != nil {
 		panic(err)
 	}
-	bridge, err := vncbridge.Start(vncbridge.Options{Host: "127.0.0.1", Port: 5901})
+	bridge, err := vncbridge.Start(vncbridge.Options{Host: "127.0.0.1", Port: ln.Addr().(*net.TCPAddr).Port})
 	if err != nil {
 		panic(err)
 	}
@@ -64,6 +69,9 @@ func serve(conn net.Conn) {
 		return
 	}
 	fail(write(conn, serverInit()))
+	// Push one ServerCutText right after init so remote->local clipboard
+	// sync can be verified independently of any client paste.
+	fail(write(conn, serverCutText([]byte("srv-push-88"))))
 
 	pixels := bandedPixels()
 	for {
@@ -95,18 +103,43 @@ func serve(conn net.Conn) {
 			// Throttle to ~10fps so the client main thread stays responsive.
 			time.Sleep(100 * time.Millisecond)
 			pixels = bandedPixels()
-		case 4: // KeyEvent
-			if err := readN(conn, 7); err != nil {
+		case 4: // KeyEvent: down-flag(1) + pad(2) + keysym(4) — log and discard.
+			body := make([]byte, 7)
+			if _, err := io.ReadFull(conn, body); err != nil {
 				return
 			}
+			fmt.Printf("mockvnc: KeyEvent down=%d keysym=%#x\n", body[0], binary.BigEndian.Uint32(body[3:7]))
 		case 5: // PointerEvent
 			if err := readN(conn, 5); err != nil {
+				return
+			}
+		case 6: // ClientCutText: pad(3) + length(4) + text — log and echo back
+			// as ServerCutText so clipboard sync can be tested end to end.
+			meta := make([]byte, 7)
+			if _, err := io.ReadFull(conn, meta); err != nil {
+				return
+			}
+			n := int(binary.BigEndian.Uint32(meta[3:7]))
+			text := make([]byte, n)
+			if _, err := io.ReadFull(conn, text); err != nil {
+				return
+			}
+			fmt.Printf("mockvnc: ClientCutText %q\n", text)
+			if err := write(conn, serverCutText(text)); err != nil {
 				return
 			}
 		default:
 			return
 		}
 	}
+}
+
+func serverCutText(text []byte) []byte {
+	out := make([]byte, 8+len(text))
+	out[0] = 3 // ServerCutText
+	binary.BigEndian.PutUint32(out[4:8], uint32(len(text)))
+	copy(out[8:], text)
+	return out
 }
 
 func serverInit() []byte {

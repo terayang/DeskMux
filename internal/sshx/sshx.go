@@ -31,9 +31,10 @@ const DefaultReadyTimeout = 10 * time.Second
 // callbacks (onData/onClose) may fire from internal goroutines at any time
 // until the shell/session is closed.
 type Manager struct {
-	mu           sync.Mutex
-	sessions     map[string]*session
-	readyTimeout time.Duration
+	mu                sync.Mutex
+	sessions          map[string]*session
+	readyTimeout      time.Duration
+	keepaliveInterval time.Duration
 
 	// HostKeyCallback verifies server host keys. When nil it defaults to
 	// accepting any key, matching the TS service (ssh2 without a
@@ -52,8 +53,9 @@ func newManager(readyTimeout time.Duration) *Manager {
 		readyTimeout = DefaultReadyTimeout
 	}
 	return &Manager{
-		sessions:     make(map[string]*session),
-		readyTimeout: readyTimeout,
+		sessions:          make(map[string]*session),
+		readyTimeout:      readyTimeout,
+		keepaliveInterval: DefaultKeepaliveInterval,
 	}
 }
 
@@ -61,8 +63,22 @@ func newManager(readyTimeout time.Duration) *Manager {
 type session struct {
 	client *ssh.Client
 
+	// done is closed when the connection ends (CloseSession, CloseAll,
+	// remote drop, or keepalive failure) and stops the keepalive goroutine.
+	done     chan struct{}
+	doneOnce sync.Once
+	// wg tracks the keepalive goroutine so tests can assert it exits.
+	wg sync.WaitGroup
+	// sendKeepalive sends one application-level probe (see keepalive.go).
+	sendKeepalive func() error
+
 	mu    sync.Mutex
 	shell *shell
+}
+
+// signalDone marks the connection as ended. Idempotent.
+func (s *session) signalDone() {
+	s.doneOnce.Do(func() { close(s.done) })
 }
 
 // shell is the one interactive shell channel of a session.
@@ -106,7 +122,8 @@ func (m *Manager) CreateSession(cfg AuthConfig) (string, error) {
 	}
 
 	addr := net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port))
-	conn, err := net.DialTimeout("tcp", addr, m.readyTimeout)
+	dialer := &net.Dialer{Timeout: m.readyTimeout, KeepAlive: TCPKeepAlivePeriod}
+	conn, err := dialer.Dial("tcp", addr)
 	if err != nil {
 		return "", mapDialError(err)
 	}
@@ -122,16 +139,26 @@ func (m *Manager) CreateSession(cfg AuthConfig) (string, error) {
 	client := ssh.NewClient(clientConn, chans, reqs)
 
 	sessionID := newSessionID()
+	sess := newSession(client)
 	m.mu.Lock()
-	m.sessions[sessionID] = &session{client: client}
+	m.sessions[sessionID] = sess
 	m.mu.Unlock()
 
-	// A dropped connection removes its session, like the TS 'close' handler.
+	// A dropped connection removes its session, like the TS 'close' handler,
+	// and stops the keepalive goroutine. This also runs when CloseSession,
+	// CloseAll, or the keepalive loop closes the client.
 	go func() {
 		_ = client.Wait()
+		sess.signalDone()
 		m.mu.Lock()
 		delete(m.sessions, sessionID)
 		m.mu.Unlock()
+	}()
+
+	sess.wg.Add(1)
+	go func() {
+		defer sess.wg.Done()
+		m.keepaliveLoop(sess)
 	}()
 
 	return sessionID, nil

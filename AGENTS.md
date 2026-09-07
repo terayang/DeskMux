@@ -16,8 +16,8 @@ AnyRemote：跨平台桌面远程会话管理器（对标 1Remote）。任务契
 
 ## 目录约定
 
-- Wails 布局：Go 后端在根包（`main.go` / `app.go` / `bindings.go`）与 `internal/`（scanner / sshx / rfb / vncbridge / store，服务层）；React UI 在 `frontend/src/`，前后端共享类型在 `frontend/shared/`，`window.anyremote` 适配层在 `frontend/src/bridge/`；`frontend/wailsjs/` 为 `wails build` 生成的绑定（不入库）。
-- `scripts/`：`build-dmg.sh`（.app → dmg，输出 dist/）、`measure-startup.sh`（启动延迟实测，Wails vs 旧 Electron 包）。
+- Wails 布局：Go 后端在根包（`main.go` / `app.go` / `bindings.go`）与 `internal/`（scanner / sshx / rfb / vncbridge / store，服务层）；React UI 在 `frontend/src/`（工作台骨架组件在 `components/`，共享 hooks 在 `hooks/`、纯助手在 `utils/`），前后端共享类型在 `frontend/shared/`，`window.anyremote` 适配层在 `frontend/src/bridge/`；`frontend/wailsjs/` 为 `wails build` 生成的绑定（不入库）。
+- `scripts/`：`build-dmg.sh`（.app → dmg，输出 dist/）、`measure-startup.sh`（启动延迟实测，Wails vs 旧 Electron 包）、`bump-version.mjs`（三处版本号统一改写，`npm run dist*` 的 pre 钩子自动调用，打包前必升 patch）。
 - Electron 遗物已于 M6 全部移除（`src/main/`、`tests/`、smoke 脚本、electron 配置等，清单见 docs/MIGRATION.md §6）；禁止重新引入 electron / vitest / playwright 依赖。
 - `docs/` 文档；`build/` 应用图标（`appicon.png`）、darwin/windows 模板与 wails 构建输出（`build/bin/`，不入库）；`_ref/` 第三方参考源码（仅供阅读，不入库，不修改）。
 
@@ -46,5 +46,5 @@ AnyRemote：跨平台桌面远程会话管理器（对标 1Remote）。任务契
   - 开发：`npm run dev`（wails dev；纯前端预览可 `npm --prefix frontend run dev`，bridge 自动切 mock）
   - 测试：`npm test`（go test ./...）；类型检查 `npm run typecheck`（go vet + frontend tsc）
   - 打包：`npm run build`（wails build → `build/bin/`；同时重新生成 `frontend/wailsjs/` 绑定）
-  - 安装包：`npm run dist`（mac universal dmg → `dist/`）；`npm run dist:win`（Windows NSIS → `build/bin/`，本机可交叉构建）
+  - 安装包：`npm run dist`（mac universal dmg → `dist/`）；`npm run dist:win`（Windows NSIS → `build/bin/`，本机可交叉构建）。两者均带 pre 钩子：打包前自动递增 patch 版本号（scripts/bump-version.mjs 同步改写三处），产物文件名永不被覆盖
   - 启动实测：`bash scripts/measure-startup.sh`（Wails vs 旧 Electron 包，口径见脚本注释）

@@ -119,8 +119,9 @@ anyremote/
 目标：对标 1Remote / Tabby / Termius 的专业远程工具质感，美观且高效。
 
 - **视觉**：深色主题为默认（antd `darkAlgorithm` + compact 紧凑密度 + 定制 token：主色 / 圆角 / 字体）；终端与地址类文本使用等宽字体（JetBrains Mono / SF Mono）。
-- **信息架构**：扫描引导页（输入目标 → 协议卡片多选 → 凭据）→ 会话工作区（左侧连接列表，主区多标签页：桌面 / 终端 / 文件）。
-- **交互**：键盘优先（`Cmd/Ctrl+K` 快速连接、`Cmd/Ctrl+W` 关闭标签，借鉴 1Remote Launcher）；协议卡片 = 图标 + 名称 + 一句话人话说明 + 支持状态；连接进度与错误反馈即时可见，错误信息用中文人话。
+- **信息架构**：工作台即首页 + Operator Console 骨架（2026-09 起）——48px 活动栏（会话/设备视图切换 + ⌘K 快速连接 + 设置）| 240px 上下文理表（会话视图：活跃会话组 + 已保存设备组，实时筛选；设备视图：设备清单）| 主内容区（无会话=欢迎面板快速连接；有会话=44px 会话头 + 自研 32px 协议标签条 + 面板；设备视图=设备表，行内 [终端]/[桌面] 直连入口）。⌘K 命令面板为全局叠加层：搜索设备/会话、切换会话、扫描新地址、新建连接。新目标统一经「新建连接」模态完成（输入目标 → 协议卡片多选 → 凭据）。旧的"扫描向导首页"与 Sider+Tabs 布局已退役；设备/会话的身份匹配规则：savedId 优先，无 savedId（连接后才保存）时回退 host+username（utils/session.ts 的 savedForSession/liveSessionFor）。
+- **多会话并存（F6）**：连接新目标 = 新增会话而非替换；每个会话有前端生成的 session id（`session-N`），其协议标签页子树常驻 DOM（非活跃会话 display:none 隐藏，终端缓冲/noVNC 画布/连接均保留）；面板经 `SessionScopeContext`（store/session.ts）读取本会话上下文，terminal/files/vnc 的 zustand store 为按 session id 注册的实例（getXxxStore/dropXxxStore），VNC live 槽为 `Map<sessionId, …>`；关闭会话释放其全部资源，全部关闭后回落欢迎面板。
+- **交互**：键盘优先（`Cmd/Ctrl+K` 命令面板、`Cmd/Ctrl+1..9` 切换第 N 个会话、`Cmd/Ctrl+W` 关闭标签；全局快捷键走 capture 阶段监听——xterm 会吞掉 Ctrl+K 等按键的冒泡）；协议卡片 = 图标 + 名称 + 一句话人话说明 + 支持状态；连接进度与错误反馈即时可见，错误信息用中文人话。
 - **评审流程**：阶段 1 交付 mock 数据的可点击 UI 原型（Playwright 截图），用户确认视觉与交互方向后才进入功能实现；后续每个 UI 相关阶段附最新截图。
 
 ## 9. 阶段计划

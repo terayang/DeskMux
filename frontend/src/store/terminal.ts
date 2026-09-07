@@ -1,7 +1,7 @@
-import { create } from 'zustand'
+import { create, useStore } from 'zustand'
 import { ipcErrorCode, ipcErrorMessage } from '../../shared/ipc'
 
-/** Lifecycle of the terminal panel's SSH shell session. */
+/** Lifecycle of one terminal panel's SSH shell session. */
 export type TerminalStatus =
   /** No session context yet; the panel shows a placeholder. */
   | 'idle'
@@ -60,14 +60,44 @@ interface TerminalState {
   reset: () => void
 }
 
-export const useTerminalStore = create<TerminalState>((set) => ({
-  status: 'idle',
-  error: null,
-  attempt: 0,
-  markConnecting: () => set({ status: 'connecting', error: null }),
-  markConnected: () => set({ status: 'connected', error: null }),
-  markError: (error) => set({ status: 'error', error }),
-  markClosed: () => set({ status: 'closed' }),
-  retry: () => set((s) => ({ status: 'connecting', error: null, attempt: s.attempt + 1 })),
-  reset: () => set({ status: 'idle', error: null })
-}))
+export type TerminalStore = ReturnType<typeof createTerminalStore>
+
+function createTerminalStore() {
+  return create<TerminalState>((set) => ({
+    status: 'idle',
+    error: null,
+    attempt: 0,
+    markConnecting: () => set({ status: 'connecting', error: null }),
+    markConnected: () => set({ status: 'connected', error: null }),
+    markError: (error) => set({ status: 'error', error }),
+    markClosed: () => set({ status: 'closed' }),
+    retry: () => set((s) => ({ status: 'connecting', error: null, attempt: s.attempt + 1 })),
+    reset: () => set({ status: 'idle', error: null })
+  }))
+}
+
+/**
+ * Multi-session model (F6): every session gets its own terminal store, keyed
+ * by SessionContext.id, so parallel sessions' shell lifecycles never clobber
+ * each other. Stores are created lazily by the panel and dropped when the
+ * session closes (useAppStore.closeSession).
+ */
+const registry = new Map<string, TerminalStore>()
+
+export function getTerminalStore(sessionId: string): TerminalStore {
+  let store = registry.get(sessionId)
+  if (store === undefined) {
+    store = createTerminalStore()
+    registry.set(sessionId, store)
+  }
+  return store
+}
+
+export function dropTerminalStore(sessionId: string): void {
+  registry.delete(sessionId)
+}
+
+/** Hook shorthand: subscribes the component to this session's terminal store. */
+export function useTerminalStore<T>(sessionId: string, selector: (s: TerminalState) => T): T {
+  return useStore(getTerminalStore(sessionId), selector)
+}

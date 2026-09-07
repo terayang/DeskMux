@@ -7,6 +7,7 @@
   "settings": {
     "title": "设置",
     "open": "设置",
+    "language": "语言",
     "secretStorage": {
       "label": "凭据存储方式",
       "keychain": "系统钥匙串（推荐）",
@@ -30,7 +31,6 @@
     "unsupportedTooltip": "暂不支持，规划中",
     "selectedCount": "已选 {{count}} 项",
     "connect": "连接",
-    "shortcutHint": "⌘K 聚焦输入框",
     "savedMatch": "该地址已保存为「{{name}}」（{{username}}@{{host}}）",
     "savedMatchMulti": "该地址有 {{count}} 个已保存身份",
     "directConnect": "直接连接",
@@ -39,16 +39,49 @@
   },
   "session": {
     "saved": "已保存连接",
-    "current": "当前",
+    "active": "活跃会话",
+    "connected": "已连接",
+    "closeSession": "关闭会话",
     "newConnection": "+ 新建连接",
     "disconnect": "断开连接",
     "disconnectConfirm": "断开与 {{target}} 的连接？",
-    "switchNewConfirm": "连接新目标将断开与 {{target}} 的当前会话",
     "tabs": {
       "desktop": "远程桌面",
       "terminal": "终端",
       "files": "文件管理"
     }
+  },
+  "welcome": {
+    "hintConnect": "已保存地址直接连接，新地址进入扫描",
+    "hintNew": "快速连接"
+  },
+  "workbench": {
+    "sessions": "会话",
+    "devices": "设备",
+    "activeCount": "{{count}} 个活跃",
+    "deviceCount": "{{count}} 台设备",
+    "filterPlaceholder": "筛选设备或地址…",
+    "quickConnect": "快速连接"
+  },
+  "rail": {
+    "activeGroup": "活跃中",
+    "foot": "{{devices}} 台设备 · {{sessions}} 个会话"
+  },
+  "devices": {
+    "add": "接入新设备",
+    "empty": "还没有保存的设备",
+    "colName": "名称",
+    "colAddress": "地址",
+    "colProtocols": "协议",
+    "colActions": "操作",
+    "terminal": "终端",
+    "desktop": "桌面"
+  },
+  "palette": {
+    "placeholder": "输入地址或搜索设备、会话…",
+    "switchTo": "切换到",
+    "newConnection": "新建连接",
+    "scanAndConnect": "扫描并连接 {{target}}"
   },
   "saved": {
     "empty": "暂无已保存连接，连接时勾选「保存此连接与凭据」即可收藏",
@@ -58,8 +91,26 @@
     "saveFailed": "保存连接失败",
     "loadFailed": "读取已保存连接失败",
     "deleteFailed": "删除失败",
-    "doubleClickHint": "双击直接连接",
-    "noMatch": "没有匹配的已保存连接"
+    "clickHint": "单击直接连接",
+    "noMatch": "没有匹配的已保存连接",
+    "edit": "编辑",
+    "editTitle": "编辑连接",
+    "name": "名称",
+    "nameRequired": "请输入名称",
+    "host": "主机地址",
+    "hostRequired": "请输入主机地址",
+    "passwordKeep": "留空则保留已存密码",
+    "keyKeep": "留空则保留当前私钥路径",
+    "currentKeyHint": "当前凭据：私钥 {{path}}",
+    "clearSecret": "清除已存凭据",
+    "protocols": "协议",
+    "protocolsRequired": "至少选择一个协议",
+    "protoScanning": "正在探测主机协议…",
+    "protoScanFailed": "协议探测失败，可手动勾选",
+    "protoOpen": "{{protocol}} 已开放（端口 {{port}}）",
+    "protoClosed": "{{protocol}} 未检测到",
+    "protoAdd": "添加",
+    "save": "保存"
   },
   "credentials": {
     "title": "连接凭据",
@@ -101,6 +152,15 @@
     "colorDepth": "色深",
     "depth24": "24 位（真彩）",
     "depth16": "16 位（省带宽）",
+    "fullscreen": "全屏",
+    "fullscreenExit": "退出全屏",
+    "fullscreenUnsupported": "当前环境不支持全屏",
+    "viewOnly": "只读模式",
+    "viewOnlyHint": "只读模式：仅观看，不向远端发送键鼠输入（本地复制也不会同步到远端）",
+    "sendKeys": "发送按键",
+    "sendCtrlAltDel": "发送 Ctrl+Alt+Del",
+    "sendAltF4": "发送 Alt+F4",
+    "sendSuper": "发送 Super 键（Win/⌘）",
     "disconnect": "断开"
   },
   "terminal": {
@@ -129,7 +189,7 @@
     "modified": "修改时间",
     "up": "上级",
     "refresh": "刷新",
-    "noContext": "无会话上下文，请先从扫描页建立连接",
+    "noContext": "无会话上下文，请先建立连接",
     "connecting": "正在连接…",
     "retry": "重试",
     "rename": "重命名",

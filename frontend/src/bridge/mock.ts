@@ -69,7 +69,46 @@ const MOCK_FILES: FileEntry[] = [
   { name: 'photo.png', type: 'file', size: 248_930, mtimeMs: 1750000000000, mode: 0o644 }
 ]
 
-const MOCK_SESSION_ID = 'mock-session'
+/**
+ * Unique mock session ids (multi-session model, F6): several sessions can be
+ * live at once, and the per-session event channels (ssh:data:<id>, ...)
+ * would collide if every connection returned the same id.
+ */
+let mockSessionSeq = 0
+
+/** sessionId -> target host, so the mock shell greeting can tag its session. */
+const mockHosts = new Map<string, string>()
+
+/**
+ * Demo/capture hook: `?vncbridge=<wsPort>` points desktop panels at a real
+ * bridge (e.g. scripts/mockvnc) under vite dev. For multi-session VNC tests
+ * the value also accepts per-host mappings `?vncbridge=<host>=<wsPort>,...`
+ * (one bridge serves only one client, so each session needs its own mockvnc
+ * instance — run them with different -addr ports). Mapping by host (instead
+ * of call order) keeps StrictMode's double-attach harmless: both attempts of
+ * one session resolve to the same port, and only the surviving one opens a
+ * WebSocket.
+ */
+let mockBridgeSeq = 0
+
+function nextVncBridge(host: string): { bridgeId: string; wsPort: number } {
+  const raw = new URLSearchParams(location.search).get('vncbridge') ?? ''
+  let defaultPort: number | undefined
+  const byHost = new Map<string, number>()
+  for (const entry of raw.split(',')) {
+    const [h, p] = entry.split('=')
+    const port = Number((p ?? h).trim())
+    if (!Number.isInteger(port) || port <= 0) continue
+    if (p === undefined) defaultPort = port
+    else byHost.set(h.trim(), port)
+  }
+  const wsPort = byHost.get(host) ?? defaultPort
+  if (wsPort === undefined) {
+    throw new Error('[UNREACHABLE] mock: no VNC backend under vite dev')
+  }
+  mockBridgeSeq += 1
+  return { bridgeId: `dev-bridge-${mockBridgeSeq}`, wsPort }
+}
 
 /**
  * Builds the mock facade. The saved-connections part is injected so mock and
@@ -84,20 +123,27 @@ export function createMockApi(connections: AnyRemoteApi['connections']): AnyRemo
       return { host, startedAt, durationMs: 400, results: MOCK_SCAN_RESULTS }
     },
     ssh: {
-      connect: async () => {
+      connect: async (config) => {
         await delay(200)
-        return MOCK_SESSION_ID
+        mockSessionSeq += 1
+        const id = `mock-session-${mockSessionSeq}`
+        mockHosts.set(id, config.host)
+        return id
       },
       openShell: async (sessionId) => {
         // A greeting chunk so the terminal panel shows life; no echo after.
+        // The host tag tells parallel mock sessions apart in tests.
+        const host = mockHosts.get(sessionId) ?? 'unknown'
         setTimeout(
-          () => emit(sshDataChannel(sessionId), 'mock shell — no backend connected\r\n$ '),
+          () => emit(sshDataChannel(sessionId), `mock shell [${host}] — no backend connected\r\n$ `),
           50
         )
       },
       write: () => undefined,
       resize: () => undefined,
-      close: async () => undefined,
+      close: async (sessionId) => {
+        mockHosts.delete(sessionId)
+      },
       onData: (sessionId, cb) => on(sshDataChannel(sessionId), cb),
       onClose: (sessionId, cb) => on(sshCloseChannel(sessionId), cb)
     },
@@ -117,15 +163,9 @@ export function createMockApi(connections: AnyRemoteApi['connections']): AnyRemo
       onProgress: (sessionId, cb) => on(sftpProgressChannel(sessionId), cb)
     },
     vnc: {
-      startBridge: async () => {
+      startBridge: async (params) => {
         await delay(100)
-        // Demo/capture hook: `?vncbridge=<port>` points the desktop panel at a
-        // real bridge (e.g. scripts/mockvnc) under vite dev.
-        const port = new URLSearchParams(location.search).get('vncbridge')
-        if (port !== null) {
-          return { bridgeId: 'dev-bridge', wsPort: Number(port) }
-        }
-        throw new Error('[UNREACHABLE] mock: no VNC backend under vite dev')
+        return nextVncBridge(params.host)
       },
       stopBridge: async () => undefined
     },

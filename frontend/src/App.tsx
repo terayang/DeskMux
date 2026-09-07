@@ -1,19 +1,9 @@
-import { SettingOutlined } from '@ant-design/icons'
-import { App as AntdApp, Button, ConfigProvider, Segmented, theme } from 'antd'
-import { useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import SettingsModal from './components/SettingsModal'
-import { setLanguage, type AppLanguage } from './i18n'
-import ScanPage from './pages/ScanPage'
+import { App as AntdApp, ConfigProvider, theme } from 'antd'
+import { useEffect } from 'react'
 import SessionPage from './pages/SessionPage'
 import { useAppStore } from './store'
 
 export default function App() {
-  const page = useAppStore((s) => s.page)
-  const { t, i18n } = useTranslation()
-  const language: AppLanguage = i18n.language.startsWith('en') ? 'en-US' : 'zh-CN'
-  const [settingsOpen, setSettingsOpen] = useState(false)
-
   // Keyboard-first shortcuts (see docs/ARCHITECTURE.md §8).
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -21,59 +11,63 @@ export default function App() {
       const key = e.key.toLowerCase()
       if (key === 'k') {
         e.preventDefault()
-        // ⌘K dispatches per page: on the scan page it focuses the target
-        // input; in the session workspace it opens the new-connection modal.
-        const { page, setNewConnectionOpen } = useAppStore.getState()
-        if (page === 'session') {
-          setNewConnectionOpen(true)
-        } else {
-          document.getElementById('target-address-input')?.focus()
-        }
+        // ⌘K toggles the command palette.
+        const { paletteOpen, setPaletteOpen } = useAppStore.getState()
+        setPaletteOpen(!paletteOpen)
       } else if (key === 'w') {
         e.preventDefault()
-        const { activeTab, closeTab } = useAppStore.getState()
-        if (activeTab) closeTab(activeTab)
+        // Closes the active session's current protocol tab; closing its last
+        // tab closes the session (multi-session model, F6).
+        const { sessions, activeSessionId, closeTab } = useAppStore.getState()
+        const active = sessions.find((s) => s.id === activeSessionId)
+        if (active?.activeTab) closeTab(active.activeTab)
+      } else if (key >= '1' && key <= '9') {
+        e.preventDefault()
+        // ⌘1..⌘9 switch to the Nth session.
+        const { sessions, setActiveSession, setActiveView } = useAppStore.getState()
+        const target = sessions[Number(key) - 1]
+        if (target) {
+          setActiveView('sessions')
+          setActiveSession(target.id)
+        }
       }
     }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
+    // Capture phase: xterm swallows Ctrl+K (kill-line) and friends on its
+    // helper textarea, so bubble-phase listeners never see them.
+    window.addEventListener('keydown', onKeyDown, true)
+    return () => window.removeEventListener('keydown', onKeyDown, true)
   }, [])
 
   return (
     <ConfigProvider
       theme={{
         algorithm: [theme.darkAlgorithm, theme.compactAlgorithm],
+        // Direction-A token layer (docs/design/direction-a-tokens.md):
+        // layered dark greys, hairline borders, one restrained brand blue.
         token: {
-          colorPrimary: '#4c8dff',
-          colorInfo: '#4c8dff',
-          borderRadius: 6
+          colorPrimary: '#5B9BFF',
+          colorInfo: '#5B9BFF',
+          colorSuccess: '#4CC38A',
+          colorError: '#E56363',
+          colorBgLayout: '#0E1116',
+          colorBgContainer: '#151A21',
+          colorBgElevated: '#1C222B',
+          colorBorder: 'rgba(255,255,255,0.08)',
+          colorBorderSecondary: 'rgba(255,255,255,0.05)',
+          colorText: '#E2E8F0',
+          colorTextSecondary: '#97A3B4',
+          colorTextTertiary: '#5E6B7D',
+          borderRadius: 6,
+          fontSize: 13,
+          fontFamily:
+            '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
+          fontFamilyCode:
+            'ui-monospace, "JetBrains Mono", "SF Mono", SFMono-Regular, Menlo, Consolas, monospace'
         }
       }}
     >
       <AntdApp>
-        <div className="app-shell">
-          <div className="app-header">
-            <Segmented
-              size="small"
-              value={language}
-              onChange={(lng) => setLanguage(lng as AppLanguage)}
-              options={[
-                { label: '中文', value: 'zh-CN' },
-                { label: 'EN', value: 'en-US' }
-              ]}
-            />
-            <Button
-              type="text"
-              size="small"
-              icon={<SettingOutlined />}
-              aria-label={t('settings.open')}
-              style={{ marginLeft: 8 }}
-              onClick={() => setSettingsOpen(true)}
-            />
-          </div>
-          <div className="app-body">{page === 'scan' ? <ScanPage /> : <SessionPage />}</div>
-          <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-        </div>
+        <SessionPage />
       </AntdApp>
     </ConfigProvider>
   )

@@ -7,6 +7,7 @@
   "settings": {
     "title": "Settings",
     "open": "Settings",
+    "language": "Language",
     "secretStorage": {
       "label": "Credential storage",
       "keychain": "System keychain (recommended)",
@@ -30,7 +31,6 @@
     "unsupportedTooltip": "Not supported yet, planned",
     "selectedCount": "{{count}} selected",
     "connect": "Connect",
-    "shortcutHint": "⌘K to focus input",
     "savedMatch": "This address is saved as \"{{name}}\" ({{username}}@{{host}})",
     "savedMatchMulti": "This address has {{count}} saved identities",
     "directConnect": "Connect Directly",
@@ -39,16 +39,49 @@
   },
   "session": {
     "saved": "Saved Connections",
-    "current": "Current",
+    "active": "Active Sessions",
+    "connected": "Connected",
+    "closeSession": "Close session",
     "newConnection": "+ New Connection",
     "disconnect": "Disconnect",
     "disconnectConfirm": "Disconnect from {{target}}?",
-    "switchNewConfirm": "Connecting to a new target will end the current session with {{target}}",
     "tabs": {
       "desktop": "Remote Desktop",
       "terminal": "Terminal",
       "files": "Files"
     }
+  },
+  "welcome": {
+    "hintConnect": "Connect to a saved address, or scan a new one",
+    "hintNew": "Quick connect"
+  },
+  "workbench": {
+    "sessions": "Sessions",
+    "devices": "Devices",
+    "activeCount": "{{count}} active",
+    "deviceCount": "{{count}} devices",
+    "filterPlaceholder": "Filter devices or addresses…",
+    "quickConnect": "Quick connect"
+  },
+  "rail": {
+    "activeGroup": "Active",
+    "foot": "{{devices}} devices · {{sessions}} sessions"
+  },
+  "devices": {
+    "add": "Add Device",
+    "empty": "No saved devices yet",
+    "colName": "Name",
+    "colAddress": "Address",
+    "colProtocols": "Protocols",
+    "colActions": "Actions",
+    "terminal": "Terminal",
+    "desktop": "Desktop"
+  },
+  "palette": {
+    "placeholder": "Type an address or search devices, sessions…",
+    "switchTo": "Switch to",
+    "newConnection": "New Connection",
+    "scanAndConnect": "Scan and connect {{target}}"
   },
   "saved": {
     "empty": "No saved connections yet — check \"Save this connection and credentials\" when connecting",
@@ -58,8 +91,26 @@
     "saveFailed": "Failed to save connection",
     "loadFailed": "Failed to load saved connection",
     "deleteFailed": "Failed to delete",
-    "doubleClickHint": "Double-click to connect directly",
-    "noMatch": "No saved connections match the input"
+    "clickHint": "Click to connect directly",
+    "noMatch": "No saved connections match the input",
+    "edit": "Edit",
+    "editTitle": "Edit Connection",
+    "name": "Name",
+    "nameRequired": "Please enter a name",
+    "host": "Host",
+    "hostRequired": "Please enter the host address",
+    "passwordKeep": "Leave empty to keep the saved password",
+    "keyKeep": "Leave empty to keep the current private key path",
+    "currentKeyHint": "Current credential: private key {{path}}",
+    "clearSecret": "Clear the stored credential",
+    "protocols": "Protocols",
+    "protocolsRequired": "Select at least one protocol",
+    "protoScanning": "Probing host protocols…",
+    "protoScanFailed": "Protocol probe failed — select manually",
+    "protoOpen": "{{protocol}} is open (port {{port}})",
+    "protoClosed": "{{protocol}} not detected",
+    "protoAdd": "Add",
+    "save": "Save"
   },
   "credentials": {
     "title": "Connection Credentials",
@@ -101,6 +152,15 @@
     "colorDepth": "Color depth",
     "depth24": "24-bit (true color)",
     "depth16": "16-bit (saves bandwidth)",
+    "fullscreen": "Fullscreen",
+    "fullscreenExit": "Exit Fullscreen",
+    "fullscreenUnsupported": "Fullscreen is not supported in this environment",
+    "viewOnly": "View-only mode",
+    "viewOnlyHint": "View-only: watch the remote screen without sending keyboard/mouse input (local clipboard is not synced to the remote either)",
+    "sendKeys": "Send Key",
+    "sendCtrlAltDel": "Send Ctrl+Alt+Del",
+    "sendAltF4": "Send Alt+F4",
+    "sendSuper": "Send Super key (Win/⌘)",
     "disconnect": "Disconnect"
   },
   "terminal": {
@@ -129,7 +189,7 @@
     "modified": "Modified",
     "up": "Up",
     "refresh": "Refresh",
-    "noContext": "No session context — connect from the scan page first",
+    "noContext": "No session context — connect to a target first",
     "connecting": "Connecting…",
     "retry": "Retry",
     "rename": "Rename",

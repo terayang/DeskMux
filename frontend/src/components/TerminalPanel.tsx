@@ -4,8 +4,9 @@ import '@xterm/xterm/css/xterm.css'
 import { Button, Spin } from 'antd'
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSessionStore } from '../store/session'
+import { useSessionScope } from '../store/session'
 import {
+  getTerminalStore,
   toTerminalError,
   useTerminalStore,
   type TerminalError,
@@ -55,10 +56,11 @@ const KNOWN_ERROR_CODES = new Set(['AUTH_FAILED', 'UNREACHABLE', 'TIMEOUT'])
 
 export default function TerminalPanel() {
   const { t } = useTranslation()
-  const context = useSessionStore((s) => s.context)
-  const status = useTerminalStore((s) => s.status)
-  const error = useTerminalStore((s) => s.error)
-  const attempt = useTerminalStore((s) => s.attempt)
+  const context = useSessionScope()
+  const scopeId = context?.id ?? ''
+  const status = useTerminalStore(scopeId, (s) => s.status)
+  const error = useTerminalStore(scopeId, (s) => s.error)
+  const attempt = useTerminalStore(scopeId, (s) => s.attempt)
   const hostRef = useRef<HTMLDivElement>(null)
 
   const errorText = (err: TerminalError): string => {
@@ -75,7 +77,7 @@ export default function TerminalPanel() {
   }
 
   useEffect(() => {
-    const store = useTerminalStore.getState()
+    const store = getTerminalStore(scopeId).getState()
     const host = hostRef.current
     if (!context || !host) {
       store.reset()
@@ -128,17 +130,17 @@ export default function TerminalPanel() {
         cleanups.push(
           window.anyremote.ssh.onData(id, (data) => term.write(data)),
           window.anyremote.ssh.onClose(id, () => {
-            if (!cancelled) useTerminalStore.getState().markClosed()
+            if (!cancelled) getTerminalStore(scopeId).getState().markClosed()
           })
         )
         await window.anyremote.ssh.openShell(id, size)
         if (cancelled) return
         const input = term.onData((data) => window.anyremote.ssh.write(id, data))
         cleanups.push(() => input.dispose())
-        useTerminalStore.getState().markConnected()
+        getTerminalStore(scopeId).getState().markConnected()
         term.focus()
       } catch (err) {
-        if (!cancelled) useTerminalStore.getState().markError(toTerminalError(err))
+        if (!cancelled) getTerminalStore(scopeId).getState().markError(toTerminalError(err))
       }
     })()
 
@@ -149,7 +151,7 @@ export default function TerminalPanel() {
       term.dispose()
       if (sessionId !== null) void window.anyremote.ssh.close(sessionId).catch(() => undefined)
     }
-  }, [context, attempt])
+  }, [context, scopeId, attempt])
 
   const overlay = (statusKey: TerminalStatus, children: React.ReactNode) => (
     <div className="terminal-overlay" data-terminal-status={statusKey}>
@@ -157,7 +159,7 @@ export default function TerminalPanel() {
     </div>
   )
 
-  const retry = () => useTerminalStore.getState().retry()
+  const retry = () => getTerminalStore(scopeId).getState().retry()
 
   return (
     <div className="terminal-root">

@@ -1,7 +1,8 @@
-import { App as AntdApp, Modal, Radio, Spin, Typography } from 'antd'
+import { App as AntdApp, Modal, Radio, Segmented, Spin, Typography } from 'antd'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ipcErrorMessage } from '../../shared/ipc'
+import { setLanguage, type AppLanguage } from '../i18n'
 
 const { Text } = Typography
 
@@ -11,15 +12,17 @@ interface SettingsModalProps {
 }
 
 /**
- * Application settings. Currently one section: the credential storage backend
- * (system keychain vs encrypted local file). Switching migrates every stored
+ * Application settings. Two sections: the UI language (moved here from the
+ * retired app header), and the credential storage backend (system keychain vs
+ * encrypted local file). Switching the backend migrates every stored
  * credential on the Go side (SetSecretStorage in bindings.go); while the
  * migration runs the radio group is disabled behind a Spin. The local-file
  * description deliberately states its real security level (obfuscation grade,
  * see internal/store/secrets_file.go) — do not soften the wording.
  */
 export default function SettingsModal({ open, onClose }: SettingsModalProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const language: AppLanguage = i18n.language.startsWith('en') ? 'en-US' : 'zh-CN'
   const { message } = AntdApp.useApp()
   const [mode, setMode] = useState<string>('keychain')
   const [loading, setLoading] = useState(false)
@@ -62,6 +65,18 @@ export default function SettingsModal({ open, onClose }: SettingsModalProps) {
       onCancel={onClose}
       destroyOnHidden
     >
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 8 }}>{t('settings.language')}</div>
+        <Segmented
+          size="small"
+          value={language}
+          onChange={(lng) => setLanguage(lng as AppLanguage)}
+          options={[
+            { label: '中文', value: 'zh-CN' },
+            { label: 'EN', value: 'en-US' }
+          ]}
+        />
+      </div>
       <Spin spinning={loading || migrating} tip={migrating ? t('settings.secretStorage.migrating') : undefined}>
         <div style={{ marginBottom: 8 }}>{t('settings.secretStorage.label')}</div>
         <Radio.Group

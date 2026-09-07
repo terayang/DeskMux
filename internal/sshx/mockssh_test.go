@@ -44,6 +44,7 @@ type mockSSHServer struct {
 	mu            sync.Mutex
 	windowChanges []windowChangeRecord
 	conns         map[*ssh.ServerConn]struct{}
+	rawConns      map[net.Conn]struct{}
 }
 
 // startMockSSHServer starts a mock SSH server on an ephemeral loopback port;
@@ -87,6 +88,7 @@ func startMockSSHServer(t *testing.T) *mockSSHServer {
 		listener:     listener,
 		sftpHandlers: sftp.InMemHandler(),
 		conns:        make(map[*ssh.ServerConn]struct{}),
+		rawConns:     make(map[net.Conn]struct{}),
 	}
 	t.Cleanup(server.close)
 	go server.acceptLoop(config)
@@ -113,6 +115,15 @@ func (s *mockSSHServer) acceptLoop(config *ssh.ServerConfig) {
 }
 
 func (s *mockSSHServer) handleConn(netConn net.Conn, config *ssh.ServerConfig) {
+	s.mu.Lock()
+	s.rawConns[netConn] = struct{}{}
+	s.mu.Unlock()
+	defer func() {
+		s.mu.Lock()
+		delete(s.rawConns, netConn)
+		s.mu.Unlock()
+	}()
+
 	serverConn, chans, reqs, err := ssh.NewServerConn(netConn, config)
 	if err != nil {
 		_ = netConn.Close()
@@ -199,6 +210,16 @@ func (s *mockSSHServer) serveSFTP(channel ssh.Channel) {
 	server := sftp.NewRequestServer(channel, s.sftpHandlers)
 	_ = server.Serve()
 	_ = channel.Close()
+}
+
+// dropConnections abruptly closes the underlying TCP connections without an
+// SSH-level disconnect, simulating a NAT/server-side teardown.
+func (s *mockSSHServer) dropConnections() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for conn := range s.rawConns {
+		_ = conn.Close()
+	}
 }
 
 func (s *mockSSHServer) recordedWindowChanges() []windowChangeRecord {
