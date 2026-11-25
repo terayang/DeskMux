@@ -75,6 +75,17 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Read English release notes from the tagged changelog
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          awk -v heading="[${version}]" '
+            /^## / { if (found) exit; found = ($2 == heading); next }
+            found { print }
+          ' CHANGELOG.md > "$RUNNER_TEMP/release-notes.md"
+          grep -q '[^[:space:]]' "$RUNNER_TEMP/release-notes.md"
+
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
@@ -83,6 +94,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: artifacts/**/*
-          generate_release_notes: true
+          name: DeskMux ${{ github.ref_name }}
+          body_path: ${{ runner.temp }}/release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

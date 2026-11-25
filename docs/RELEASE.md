@@ -60,6 +60,8 @@ npm run dist:win   # Windows：wails build -platform windows/amd64 -nsis + 重�
 
 ### 发布流程
 
+GitHub Release 的标题和正文统一使用英文。打 tag 前，将面向用户的英文说明写入 `CHANGELOG.md` 对应的 `## [版本号] - YYYY-MM-DD` 小节。发布任务从该 tag 的小节读取正文，标题使用 `DeskMux v<版本号>`。
+
 推送版本 tag（`v*`）即触发 [release.yml](../.github/workflows/release.yml)：双平台构建后自动创建 GitHub Release 并挂载产物（见上文）。版本号在根 `package.json`、`frontend/package.json` 与 `wails.json` 的 `info.productVersion` 三处维护，由 `scripts/bump-version.mjs` 统一改写——本地执行 `npm run dist` / `npm run dist:win` 会先经 npm `pre` 钩子自动递增 patch 版本（保证每次打包产物文件名唯一、互不覆盖）；CI 环境（`CI` 环境变量）下该脚本自动跳过，发布产物版本与 tag 一致。手动调整可用 `npm run version:bump -- [major|minor|patch]`。CHANGELOG 按正式版本分段，开发期递增的 patch 号不单独成段。代码签名与公证为后续事项（macOS：`CSC_LINK` / 公证 secrets；Windows：Authenticode 证书）。
 
 ---
@@ -119,5 +121,7 @@ Also, the first time you save a connection with a password, macOS may prompt for
 4. The app relies on the system WebView2 Runtime (preinstalled on Windows 10 1803+ / 11; if missing, the installer/OS will guide you through installing it).
 
 ### Release process
+
+Use English for GitHub Release titles and notes. Before tagging, write the user-facing notes in the matching `## [version] - YYYY-MM-DD` section of `CHANGELOG.md`. The release job publishes that section from the tag under the title `DeskMux v<version>`.
 
 Pushing a version tag (`v*`) triggers [release.yml](../.github/workflows/release.yml): both platforms build, then a GitHub Release is created automatically with the artifacts attached (see above). The version lives in three places — root `package.json`, `frontend/package.json`, and `wails.json` `info.productVersion` — bump them together before tagging. Code signing and notarization are future work (macOS: `CSC_LINK` / notarization secrets; Windows: Authenticode certificate).

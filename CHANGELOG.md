@@ -2,20 +2,21 @@
 
 本文件记录 DeskMux 各版本的显著变更，遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 简式与[语义化版本](https://semver.org/lang/zh-CN/)。
 
-各版本完整的自动生成 release notes 见 [GitHub Releases](https://github.com/terayang/DeskMux/releases)。
+New release entries are written in English and published on [GitHub Releases](https://github.com/terayang/DeskMux/releases).
 
-## [Unreleased]
+## [0.2.3] - 2026-11-26
 
 ### Fixed
 
-- 修复 Windows SSH 终端无法复制、粘贴文本的问题。选中文字后按 `Ctrl+Shift+C` 复制，按 `Ctrl+Shift+V` 粘贴，`Ctrl+C` 仍可中断命令。终端提供右键菜单和中英文快捷键说明。0.2.3 开发版已通过 Windows 真机验收。
+- Fixed copying and pasting in SSH terminals on Windows. Select terminal output and press `Ctrl+Shift+C` to copy it, or press `Ctrl+Shift+V` to paste text from the Windows clipboard. `Ctrl+C` still interrupts the running command. Copy and paste were verified on a Windows machine.
+- The SSH terminal also offers Copy and Paste in its right-click menu. A hint at the bottom shows the shortcuts for your platform in the selected interface language.
 
 ## [0.2.2] - 2026-09-07
 
 ### Changed
 
-- 产品更名 AnyRemote → DeskMux：仓库、安装产物、窗口标题、界面文案、Go module 与前端桥接命名空间（`window.deskmux`）全部同步；配置目录、钥匙串 service 名与本地加密文件 KDF 盐保留旧标识以保用户数据连续性（已存连接与凭据无感）
-- 界面语言偏好存储键随桥接改名更换，语言选择一次性回落默认中文
+- AnyRemote is now DeskMux. The repository, installers, window title, interface text, Go module, and frontend bridge (`window.deskmux`) use the new name. Saved connections and credentials carry over because the configuration directory, keychain service name, and key derivation salt for encrypted files retain their original identifiers.
+- The interface language resets to Simplified Chinese once after upgrading because the preference key changed. You can switch back to English in Settings.
 
 ## [0.2.1] - 2026-09-07
 

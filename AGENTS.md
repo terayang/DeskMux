@@ -40,6 +40,7 @@ DeskMux：跨平台桌面远程会话管理器（对标 1Remote）。任务契�
 
 ## 文档维护
 
+- GitHub Release 的文案与打 tag 流程见 [docs/RELEASE.md](docs/RELEASE.md#发布流程)。
 - 修改本文件所述约定、目录结构、命令时，必须同步更新本文件。
 - 常用命令（Wails 版）：
   - 安装：`npm install && npm --prefix frontend install`
