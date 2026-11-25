@@ -39,7 +39,7 @@ DeskMux is a cross-platform (macOS / Windows) desktop remote session manager: en
 Grab the latest version from [GitHub Releases](https://github.com/terayang/DeskMux/releases):
 
 - **macOS**: `DeskMux-<version>-mac-arm64.dmg` (Apple Silicon) or `DeskMux-<version>-mac-x64.dmg` (Intel)
-- **Windows**: `DeskMux-<version>-windows-x64-installer.exe` (NSIS installer, per-user) or `DeskMux-<version>-windows-x64-portable.exe` (no-install portable)
+- **Windows**: `DeskMux-<version>-windows-x64-installer.exe` (NSIS installer, requires administrator privileges) or `DeskMux-<version>-windows-x64-portable.exe` (no-install portable)
 
 Development builds (CI on every push to main or PR) are available as artifacts at the bottom of the corresponding [workflow run page](https://github.com/terayang/DeskMux/actions/workflows/ci.yml).
 

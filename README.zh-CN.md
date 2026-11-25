@@ -39,7 +39,7 @@ DeskMux 是一个跨平台（macOS / Windows）桌面远程会话管理器：输
 从 [GitHub Releases](https://github.com/terayang/DeskMux/releases) 下载最新版本：
 
 - **macOS**：`DeskMux-<version>-mac-arm64.dmg`（Apple Silicon）或 `DeskMux-<version>-mac-x64.dmg`（Intel）
-- **Windows**：`DeskMux-<version>-windows-x64-installer.exe`（NSIS 安装包，当前用户安装）或 `DeskMux-<version>-windows-x64-portable.exe`（免安装便携版）
+- **Windows**：`DeskMux-<version>-windows-x64-installer.exe`（NSIS 安装包，需要管理员权限）或 `DeskMux-<version>-windows-x64-portable.exe`（免安装便携版）
 
 开发版（每次 push 到 main 或 PR 的 CI 构建）在对应 [workflow run 页面](https://github.com/terayang/DeskMux/actions/workflows/ci.yml)底部 artifacts 下载。
 
