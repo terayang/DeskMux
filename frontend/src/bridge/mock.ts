@@ -116,6 +116,7 @@ function nextVncBridge(host: string): { bridgeId: string; wsPort: number } {
  */
 export function createMockApi(connections: DeskMuxApi['connections']): DeskMuxApi {
   return {
+    clipboard: navigator.clipboard,
     versions: { electron: '', node: '', chrome: '' },
     scan: async (host) => {
       await delay(400)

@@ -2,6 +2,8 @@
 
 .terminal-root {
   position: relative;
+  display: flex;
+  flex-direction: column;
   height: 100%;
   background: #141414;
   border: 1px solid #2c2c2c;
@@ -10,8 +12,16 @@
 }
 
 .terminal-host {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.terminal-hint {
+  padding: 4px 8px;
+  border-top: 1px solid #2c2c2c;
+  color: #a1aab5;
+  font-size: 12px;
 }
 
 /* The fit addon subtracts this padding when proposing cols/rows. */

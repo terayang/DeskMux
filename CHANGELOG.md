@@ -4,6 +4,12 @@
 
 各版本完整的自动生成 release notes 见 [GitHub Releases](https://github.com/terayang/DeskMux/releases)。
 
+## [Unreleased]
+
+### Fixed
+
+- 修复 Windows SSH 终端无法复制、粘贴文本的问题。选中文字后按 `Ctrl+Shift+C` 复制，按 `Ctrl+Shift+V` 粘贴，`Ctrl+C` 仍可中断命令。终端提供右键菜单和中英文快捷键说明。0.2.3 开发版已通过 Windows 真机验收。
+
 ## [0.2.2] - 2026-09-07
 
 ### Changed

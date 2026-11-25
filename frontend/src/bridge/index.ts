@@ -42,6 +42,7 @@ import { createMockApi } from './mock'
 
 /** API surface exposed to the renderer as `window.deskmux`. */
 export interface DeskMuxApi {
+  clipboard: Pick<Clipboard, 'readText' | 'writeText'>
   versions: {
     electron: string
     node: string
@@ -170,6 +171,14 @@ function subscribe<T extends unknown[]>(channel: string, cb: (...args: T) => voi
 /** The Wails-backed implementation, delegating to the bound Go methods. */
 function createWailsApi(): DeskMuxApi {
   return {
+    // WebView2 exposes the system clipboard on wails.localhost. WKWebView
+    // may omit the web API on the app's custom scheme.
+    clipboard: navigator.clipboard ?? {
+      readText: () => window.runtime!.ClipboardGetText(),
+      writeText: async (text) => {
+        if (!(await window.runtime!.ClipboardSetText(text))) throw new Error('Clipboard write failed')
+      }
+    },
     // No Electron/Node under Wails; nothing in the renderer reads these.
     versions: { electron: '', node: '', chrome: '' },
     scan: (host) => app().Scan(host),

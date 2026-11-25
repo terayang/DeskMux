@@ -164,6 +164,11 @@
     "disconnect": "Disconnect"
   },
   "terminal": {
+    "copy": "Copy",
+    "paste": "Paste",
+    "clipboardHint": "Select text and press {{copyShortcut}} to copy. Press {{pasteShortcut}} to paste, or right-click for both actions. Ctrl+C interrupts a command.",
+    "copyFailed": "Could not copy the selection to the system clipboard",
+    "pasteFailed": "Could not read text from the system clipboard",
     "noSession": "No session",
     "connecting": "Connecting…",
     "retry": "Retry",

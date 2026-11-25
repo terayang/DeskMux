@@ -62,8 +62,10 @@ export interface WailsApp {
   DialogPickSavePath(defaultName: string): Promise<string>
 }
 
-/** The subset of the injected window.runtime event bus the bridge uses. */
+/** Clipboard and event APIs used by the bridge. */
 export interface WailsRuntime {
+  ClipboardGetText(): Promise<string>
+  ClipboardSetText(text: string): Promise<boolean>
   /** Subscribes to a Go-emitted event; returns the unsubscribe function. */
   EventsOn(eventName: string, callback: (...args: any[]) => void): () => void
   EventsOff(eventName: string, ...additionalEventNames: string[]): void

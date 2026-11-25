@@ -1,8 +1,8 @@
 import { FitAddon } from '@xterm/addon-fit'
 import { Terminal } from '@xterm/xterm'
 import '@xterm/xterm/css/xterm.css'
-import { Button, Spin } from 'antd'
-import { useEffect, useRef } from 'react'
+import { App as AntdApp, Button, Dropdown, Spin } from 'antd'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSessionScope } from '../store/session'
 import {
@@ -15,6 +15,9 @@ import {
 import './terminal.css'
 
 const SSH_PORT = 22
+const isMac = /Mac/i.test(navigator.platform)
+const copyShortcut = isMac ? '⌘C' : 'Ctrl+Shift+C'
+const pasteShortcut = isMac ? '⌘V' : 'Ctrl+Shift+V'
 
 /** Pseudo-TTY size used when the panel mounts hidden and cannot be measured. */
 const FALLBACK_COLS = 80
@@ -56,12 +59,15 @@ const KNOWN_ERROR_CODES = new Set(['AUTH_FAILED', 'UNREACHABLE', 'TIMEOUT'])
 
 export default function TerminalPanel() {
   const { t } = useTranslation()
+  const { message } = AntdApp.useApp()
   const context = useSessionScope()
   const scopeId = context?.id ?? ''
   const status = useTerminalStore(scopeId, (s) => s.status)
   const error = useTerminalStore(scopeId, (s) => s.error)
   const attempt = useTerminalStore(scopeId, (s) => s.attempt)
   const hostRef = useRef<HTMLDivElement>(null)
+  const termRef = useRef<Terminal | null>(null)
+  const [hasSelection, setHasSelection] = useState(false)
 
   const errorText = (err: TerminalError): string => {
     switch (err.code) {
@@ -93,6 +99,9 @@ export default function TerminalPanel() {
     const fit = new FitAddon()
     term.loadAddon(fit)
     term.open(host)
+    termRef.current = term
+    setHasSelection(false)
+    term.onSelectionChange(() => setHasSelection(term.hasSelection()))
 
     // Measure only when visible; a hidden pane (inactive tab) has no layout
     // box, in which case the shell opens with a fallback size and the
@@ -148,6 +157,7 @@ export default function TerminalPanel() {
       cancelled = true
       ro.disconnect()
       for (const undo of cleanups) undo()
+      termRef.current = null
       term.dispose()
       if (sessionId !== null) void window.deskmux.ssh.close(sessionId).catch(() => undefined)
     }
@@ -161,9 +171,56 @@ export default function TerminalPanel() {
 
   const retry = () => getTerminalStore(scopeId).getState().retry()
 
+  const runClipboardAction = async (action: 'copy' | 'paste') => {
+    const term = termRef.current
+    if (!term || status !== 'connected') return
+    term.focus()
+    try {
+      if (action === 'copy') {
+        const text = term.getSelection()
+        if (text) await window.deskmux.clipboard.writeText(text)
+      } else {
+        const text = await window.deskmux.clipboard.readText()
+        // A clipboard permission prompt can outlive the active tab or shell.
+        if (!text || term !== termRef.current || !term.element?.getClientRects().length) return
+        if (getTerminalStore(scopeId).getState().status === 'connected') term.paste(text)
+      }
+    } catch {
+      void message.error(t(action === 'copy' ? 'terminal.copyFailed' : 'terminal.pasteFailed'))
+    }
+  }
+
+  const handleClipboardShortcut = (event: KeyboardEvent) => {
+    // macOS routes ⌘C/V through its native Edit menu. Leave Ctrl+C to the PTY.
+    if (isMac || !event.ctrlKey || !event.shiftKey || event.altKey || event.metaKey) return
+    const key = event.key.toLowerCase()
+    if (key !== 'c' && key !== 'v') return
+    event.preventDefault()
+    event.stopPropagation()
+    if (!event.repeat) void runClipboardAction(key === 'c' ? 'copy' : 'paste')
+  }
+
   return (
     <div className="terminal-root">
-      <div ref={hostRef} className="terminal-host" />
+      <Dropdown
+        trigger={['contextMenu']}
+        disabled={status !== 'connected'}
+        getPopupContainer={(trigger) => trigger.parentElement!}
+        menu={{
+          items: [
+            { key: 'copy', label: t('terminal.copy'), extra: copyShortcut, disabled: !hasSelection },
+            { key: 'paste', label: t('terminal.paste'), extra: pasteShortcut }
+          ],
+          onClick: ({ key }) => void runClipboardAction(key === 'copy' ? 'copy' : 'paste')
+        }}
+      >
+        <div ref={hostRef} className="terminal-host" onKeyDownCapture={handleClipboardShortcut} />
+      </Dropdown>
+      {status === 'connected' && (
+        <div className="terminal-hint">
+          {t('terminal.clipboardHint', { copyShortcut, pasteShortcut })}
+        </div>
+      )}
       {status === 'idle' &&
         overlay(
           'idle',
